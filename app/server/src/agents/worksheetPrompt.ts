@@ -5,6 +5,16 @@ import { APP_ROOT } from '../config.js';
 
 const DOCS_DIR = path.resolve(APP_ROOT, '../docs');
 
+/** Placeholder in docs/examplePrompt.md for the inlined design brief. */
+const DESIGN_BRIEF_PLACEHOLDER =
+  '[full docs/deep-research-report.md inlined here]';
+
+/** Example learning-point JSON id in docs/examplePrompt.md (substituted at runtime). */
+const EXAMPLE_TOPIC_ID = 'mt_FNSeo9_T2Z';
+
+/** Example theme string in docs/examplePrompt.md (substituted at runtime). */
+const EXAMPLE_THEME = 'unicorns';
+
 function loadDoc(filename: string): string {
   const filePath = path.join(DOCS_DIR, filename);
   if (!fs.existsSync(filePath)) {
@@ -39,8 +49,8 @@ function learningPointsBlock(topics: Topic[], childName: string): string {
 }
 
 /**
- * Build the image-generation prompt from docs/examplePrompt.md with topic + theme
- * substituted, and docs/deep-research-report.md attached as the design brief.
+ * Build the image-generation prompt from docs/examplePrompt.md — the same shape
+ * the app sends — with design brief, child context, topic, and theme substituted.
  */
 export function buildWorksheetPrompt(input: {
   child: Child;
@@ -54,38 +64,39 @@ export function buildWorksheetPrompt(input: {
   const learningLabel =
     input.topics.length === 1 ? 'learning point' : 'learning points';
 
-  let body = template
+  let prompt = template.replace(DESIGN_BRIEF_PLACEHOLDER, designReport);
+
+  prompt = prompt
+    .replace(
+      /- Name: Maya\n- Age: 5\n- Approximate worksheet duration: 15 minutes/,
+      `- Name: ${input.child.name}\n- Age: ${input.child.age}\n- Approximate worksheet duration: ${input.durationMinutes} minutes`,
+    )
     .replace(
       /addresses the following learning point:/i,
       `addresses the following ${learningLabel}:`,
     )
     .replace(
-      /\{\s*"id":\s*"mt_mr_Vk7FGzK"[\s\S]*?\}\s*(?=Remember)/,
+      new RegExp(
+        `\\{\\s*"id":\\s*"${EXAMPLE_TOPIC_ID}"[\\s\\S]*?\\}\\s*(?=Remember)`,
+      ),
       `${learningPointsBlock(input.topics, input.child.name)}\n\n`,
     )
     .replace(
-      /themed around the ocean\.?/i,
+      new RegExp(`themed around ${EXAMPLE_THEME}\\.?`, 'i'),
       `themed around ${input.theme}.`,
+    )
+    .replace(
+      new RegExp(
+        `Age-appropriate for Maya \\(age 5\\)\\.`,
+      ),
+      `Age-appropriate for ${input.child.name} (age ${input.child.age}).`,
+    )
+    .replace(
+      new RegExp(`Theme every activity tightly around "${EXAMPLE_THEME}"\\.`, 'i'),
+      `Theme every activity tightly around "${input.theme}".`,
     );
 
-  return `DESIGN BRIEF (treat as the attached report "Designing homework worksheet that children want to do"):
----
-${designReport}
----
-
-CHILD CONTEXT:
-- Name: ${input.child.name}
-- Age: ${input.child.age}
-- Approximate worksheet duration: ${input.durationMinutes} minutes
-
-${body}
-
-OUTPUT REQUIREMENTS:
-- Produce a single printable A4 portrait worksheet as an image.
-- Follow every item in the "Checklist for designers and teachers".
-- UK English spelling. Age-appropriate for ${input.child.name} (age ${input.child.age}).
-- Theme every activity tightly around "${input.theme}".
-- Do not look like generic AI clip-art; illustrations must be task-relevant and specific.`;
+  return prompt;
 }
 
 export function deriveWorksheetTitle(theme: string, topics: Topic[]): string {
