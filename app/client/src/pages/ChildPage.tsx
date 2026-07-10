@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { Child, LearningPath, ProgressSummary, Worksheet } from '@shared/types';
 import { api } from '../lib/api';
-import { ConceptConstellation } from '../components/ConceptConstellation';
+import { LearningProgressMap } from '../components/LearningProgressMap';
 
 export function ChildPage() {
   const { id } = useParams<{ id: string }>();
@@ -52,11 +52,7 @@ export function ChildPage() {
         </Link>
       </div>
 
-      <ConceptConstellation
-        topics={path.constellation}
-        ragCounts={progress.ragCounts}
-        frontier={progress.frontier}
-      />
+      <LearningProgressMap path={path} childId={child.id} />
 
       <section className="panel stack">
         <div>
