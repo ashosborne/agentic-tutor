@@ -75,7 +75,7 @@ test.describe('Agentic Tutor happy path', () => {
     await expect(page.getByLabel(/Mathematics learning path/i)).toHaveCount(0);
   });
 
-  test('topic drawer prefills subject and sub-subject on generate', async ({ page }) => {
+  test('topic drawer prefills concept focus on generate', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: /Leo/i }).click();
     await page.getByRole('link', { name: /Explore learning path/i }).click();
@@ -100,9 +100,12 @@ test.describe('Agentic Tutor happy path', () => {
     await dialog.getByRole('link', { name: /Create worksheet/i }).click();
     await expect(page.getByRole('heading', { name: /Pick a theme/i })).toBeVisible();
 
-    await expect(page.getByLabel(/^Subject focus/i)).toHaveValue('English');
-    await expect(page.getByLabel(/Sub-subject focus/i)).toHaveValue(domainName!);
-    await expect(page.getByText(`We'll favour: ${topicName}`)).toBeVisible();
+    const focus = page.getByRole('group', { name: /Concept focus/i });
+    await expect(focus).toBeVisible();
+    await expect(focus.getByText(topicName!)).toBeVisible();
+    await expect(focus.getByText(`English · ${domainName}`)).toBeVisible();
+    await expect(page.getByLabel(/^Subject/i)).toHaveCount(0);
+    await expect(page.getByLabel(/^Area/i)).toHaveCount(0);
   });
 
   test('settings can toggle demo mode', async ({ page }) => {

@@ -377,7 +377,16 @@ export function LearningProgressMap({
               <Link className="btn secondary" to={`/children/${childId}/progress`}>
                 Explore learning path
               </Link>
-              <Link className="btn" to={`/children/${childId}/generate`}>
+              <Link
+                className="btn"
+                to={`/children/${childId}/generate`}
+                state={{
+                  subjectFocus: selectedTopic.subject,
+                  domainFocus: selectedTopic.domain,
+                  preferTopicId: selectedTopic.id,
+                  preferTopicName: selectedTopic.name ?? undefined,
+                }}
+              >
                 Create worksheet
               </Link>
             </div>

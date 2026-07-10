@@ -43,7 +43,8 @@ You are then to create me a worksheet that addresses the following learning poin
 Remember you are a professional designer, and will not use generic images. I want the worksheet to be themed around unicorns.
 
 OUTPUT REQUIREMENTS:
-- Produce a single printable A4 portrait worksheet page as an image.
+- Produce a single printable A4 portrait worksheet as an image.
+- The worksheet can be as many pages as you deem necessary
 - Follow every item in the "Checklist for designers and teachers".
 - UK English spelling. Age-appropriate for Maya (age 5).
 - Theme every activity tightly around "unicorns".
