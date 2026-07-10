@@ -23,12 +23,18 @@ export function GeneratePage() {
   const [duration, setDuration] = useState(20);
   const [subjectFocus, setSubjectFocus] = useState<string>(navState?.subjectFocus ?? '');
   const [domainFocus, setDomainFocus] = useState<string>(navState?.domainFocus ?? '');
-  const [preferTopicId] = useState<string | undefined>(navState?.preferTopicId);
-  const [preferTopicName] = useState<string | undefined>(navState?.preferTopicName);
+  const [preferTopicId, setPreferTopicId] = useState<string | undefined>(
+    navState?.preferTopicId,
+  );
+  const [preferTopicName, setPreferTopicName] = useState<string | undefined>(
+    navState?.preferTopicName,
+  );
   const [subjects, setSubjects] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<Worksheet | null>(null);
+
+  const conceptFocused = Boolean(preferTopicId);
 
   useEffect(() => {
     if (!id) return;
@@ -57,6 +63,11 @@ export function GeneratePage() {
   function onSubjectChange(value: string) {
     setSubjectFocus(value);
     setDomainFocus('');
+  }
+
+  function clearConceptFocus() {
+    setPreferTopicId(undefined);
+    setPreferTopicName(undefined);
   }
 
   async function onGenerate(e: React.FormEvent) {
@@ -115,6 +126,8 @@ export function GeneratePage() {
     );
   }
 
+  const focusMeta = [subjectFocus, domainFocus].filter(Boolean).join(' · ');
+
   return (
     <div className="fade-in">
       <section className="hero">
@@ -124,6 +137,19 @@ export function GeneratePage() {
       </section>
 
       <form className="panel stack" onSubmit={onGenerate}>
+        {conceptFocused && (
+          <div className="concept-focus" role="group" aria-label="Concept focus">
+            <div className="concept-focus-body">
+              <p className="section-title">Focus</p>
+              <p className="concept-focus-name">{preferTopicName}</p>
+              {focusMeta && <p className="meta">{focusMeta}</p>}
+            </div>
+            <button type="button" className="btn ghost" onClick={clearConceptFocus}>
+              Clear
+            </button>
+          </div>
+        )}
+
         <label className="field">
           Theme
           <input
@@ -151,36 +177,36 @@ export function GeneratePage() {
           </div>
         </div>
 
-        <label className="field">
-          Subject focus (optional)
-          <select value={subjectFocus} onChange={(e) => onSubjectChange(e.target.value)}>
-            <option value="">Any subject</option>
-            {subjects.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </label>
+        {!conceptFocused && (
+          <>
+            <label className="field">
+              Subject (optional)
+              <select value={subjectFocus} onChange={(e) => onSubjectChange(e.target.value)}>
+                <option value="">Any subject</option>
+                {subjects.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-        <label className="field">
-          Sub-subject focus (optional)
-          <select
-            value={domainFocus}
-            onChange={(e) => setDomainFocus(e.target.value)}
-            disabled={!subjectFocus || domainOptions.length === 0}
-          >
-            <option value="">Any sub-subject</option>
-            {domainOptions.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        {preferTopicName && (
-          <p className="meta">We&apos;ll favour: {preferTopicName}</p>
+            <label className="field">
+              Area (optional)
+              <select
+                value={domainFocus}
+                onChange={(e) => setDomainFocus(e.target.value)}
+                disabled={!subjectFocus || domainOptions.length === 0}
+              >
+                <option value="">Any area</option>
+                {domainOptions.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </>
         )}
 
         {error && <p className="error">{error}</p>}
