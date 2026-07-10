@@ -28,6 +28,18 @@ Suggested core durations from the research: about **5–8 minutes** (ages 4–6)
 
 See the [full report](docs/deep-research-report.md) for age-band templates, print specs, evaluation metrics, and A/B ideas.
 
+## Example worksheets
+
+These reference worksheets were generated with [`docs/examplePrompt.md`](docs/examplePrompt.md) against a random topic from the taxonomy dataset (*Adding and subtracting* — Mathematics, ages 5–6), themed around the ocean and constrained by the deep-research checklist.
+
+### OpenAI (Sol)
+
+![Ocean-themed addition and subtraction worksheet generated with OpenAI Sol](docs/openAI-sol-worksheet.png)
+
+### Claude Sonnet 5
+
+![Ocean-themed addition and subtraction worksheet generated with Claude Sonnet 5](docs/sonnet-5-worksheet.png)
+
 ## Roadmap
 
 - **Agent quality** — Drive worksheet generation against the deep-research findings above.
