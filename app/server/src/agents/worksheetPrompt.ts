@@ -81,7 +81,7 @@ CHILD CONTEXT:
 ${body}
 
 OUTPUT REQUIREMENTS:
-- Produce a single printable A4 portrait worksheet page as an image.
+- Produce a single printable A4 portrait worksheet as an image.
 - Follow every item in the "Checklist for designers and teachers".
 - UK English spelling. Age-appropriate for ${input.child.name} (age ${input.child.age}).
 - Theme every activity tightly around "${input.theme}".
