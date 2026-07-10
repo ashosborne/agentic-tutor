@@ -30,15 +30,31 @@ See the [full report](docs/deep-research-report.md) for age-band templates, prin
 
 ## Example worksheets
 
-These reference worksheets were generated with [`docs/examplePrompt.md`](docs/examplePrompt.md) against a random topic from the taxonomy dataset (*Adding and subtracting* — Mathematics, ages 5–6), themed around the ocean and constrained by the deep-research checklist.
+These reference worksheets were generated with [`docs/examplePrompt.md`](docs/examplePrompt.md) against topics from the taxonomy dataset, constrained by the deep-research checklist.
 
-### OpenAI (Sol)
+### Adding and subtracting (ocean theme)
+
+*Mathematics · ages 5–6*
+
+#### OpenAI (Sol)
 
 ![Ocean-themed addition and subtraction worksheet generated with OpenAI Sol](docs/openAI-sol-worksheet.png)
 
-### Claude Sonnet 5
+#### Claude Sonnet 5
 
 ![Ocean-themed addition and subtraction worksheet generated with Claude Sonnet 5](docs/sonnet-5-worksheet.png)
+
+### Looking After Money (pony theme)
+
+*Life Skills · Money & Finance · ages 5–7 · child: Maya*
+
+#### OpenAI (Sol)
+
+![Pony-themed looking-after-money worksheet generated with OpenAI Sol](docs/openAI-sol-pony-worksheet.png)
+
+#### Claude Sonnet 5
+
+![Pony-themed looking-after-money worksheet generated with Claude Sonnet 5](docs/sonnet-5-pony-worksheet.png)
 
 ## Roadmap
 

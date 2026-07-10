@@ -42,12 +42,34 @@ describe('worksheetPrompt', () => {
     });
 
     expect(prompt).toContain('themed around dinosaurs');
-    expect(prompt).not.toContain('themed around the ocean');
+    expect(prompt).not.toContain('themed around unicorns');
+    expect(prompt).not.toContain('mt_FNSeo9_T2Z');
     expect(prompt).toContain('mt_1');
     expect(prompt).toContain('Can Maya add?');
     expect(prompt).toContain('Checklist for designers and teachers');
     expect(prompt).toContain('Name: Maya');
     expect(prompt).toContain('Age: 5');
+    expect(prompt).toContain('DESIGN BRIEF');
+    expect(prompt).toContain('OUTPUT REQUIREMENTS');
+    expect(prompt).toContain('Age-appropriate for Maya (age 5)');
+    expect(prompt).toContain('Theme every activity tightly around "dinosaurs"');
+  });
+
+  it('substitutes a different child into context and output requirements', () => {
+    const leo: Child = { ...child, name: 'Leo', age: 7 };
+    const prompt = buildWorksheetPrompt({
+      child: leo,
+      theme: 'space',
+      topics: [topic],
+      durationMinutes: 20,
+    });
+
+    expect(prompt).toContain('Name: Leo');
+    expect(prompt).toContain('Age: 7');
+    expect(prompt).toContain('Approximate worksheet duration: 20 minutes');
+    expect(prompt).toContain('Age-appropriate for Leo (age 7)');
+    expect(prompt).not.toContain('Name: Maya');
+    expect(prompt).not.toContain('[full docs/deep-research-report.md inlined here]');
   });
 
   it('uses plural copy for multiple topics', () => {
