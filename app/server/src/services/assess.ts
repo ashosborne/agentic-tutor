@@ -1,11 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { nanoid } from 'nanoid';
-import type {
-  Assessment,
-  AssessmentResult,
-  GeneratedWorksheetContent,
-} from '../../../shared/types.js';
+import type { Assessment, AssessmentResult } from '../../../shared/types.js';
 import { applyAssessmentRecommendation } from '../../../shared/mastery.js';
 import { getScanAssessor } from '../agents/index.js';
 import { STORAGE_DIR } from '../db/database.js';
@@ -26,6 +22,14 @@ export interface AssessWorksheetRequest {
   originalName?: string;
 }
 
+function mimeForWorksheetFile(filePath: string): string {
+  const lower = filePath.toLowerCase();
+  if (lower.endsWith('.png')) return 'image/png';
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+  if (lower.endsWith('.webp')) return 'image/webp';
+  return 'application/octet-stream';
+}
+
 export async function assessWorksheetScan(
   req: AssessWorksheetRequest,
 ): Promise<Assessment> {
@@ -40,8 +44,6 @@ export async function assessWorksheetScan(
     .map((id) => taxonomy.topicsById.get(id))
     .filter((t): t is NonNullable<typeof t> => Boolean(t));
 
-  const content = JSON.parse(worksheet.contentJson) as GeneratedWorksheetContent;
-
   const scansDir = path.join(STORAGE_DIR, 'scans');
   fs.mkdirSync(scansDir, { recursive: true });
   const ext = req.mimeType.includes('png')
@@ -52,14 +54,25 @@ export async function assessWorksheetScan(
   const scanPath = path.join(scansDir, `${worksheet.id}-${nanoid(6)}.${ext}`);
   fs.writeFileSync(scanPath, req.imageBuffer);
 
+  let worksheetImageBase64: string | undefined;
+  let worksheetMimeType: string | undefined;
+  if (worksheet.pdfPath && fs.existsSync(worksheet.pdfPath)) {
+    const mime = mimeForWorksheetFile(worksheet.pdfPath);
+    if (mime.startsWith('image/')) {
+      worksheetImageBase64 = fs.readFileSync(worksheet.pdfPath).toString('base64');
+      worksheetMimeType = mime;
+    }
+  }
+
   const assessor = getScanAssessor();
   const output = await assessor.assess({
     child,
     theme: worksheet.theme,
     topics,
-    activities: content.activities,
     imageBase64: req.imageBuffer.toString('base64'),
     mimeType: req.mimeType,
+    worksheetImageBase64,
+    worksheetMimeType,
   });
 
   const existing = listMastery(child.id);

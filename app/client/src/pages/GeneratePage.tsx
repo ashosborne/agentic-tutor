@@ -95,7 +95,7 @@ export function GeneratePage() {
         </p>
         <div className="row">
           <a className="btn" href={`/api/worksheets/${created.id}/file`} target="_blank" rel="noreferrer">
-            Download / print
+            View / print
           </a>
           <button
             type="button"

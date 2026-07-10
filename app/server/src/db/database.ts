@@ -14,6 +14,7 @@ export type AppDatabase = DatabaseSync;
 export function ensureStorageDirs(): void {
   for (const dir of [
     STORAGE_DIR,
+    path.join(STORAGE_DIR, 'worksheets'),
     path.join(STORAGE_DIR, 'pdfs'),
     path.join(STORAGE_DIR, 'scans'),
   ]) {

@@ -2,16 +2,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type {
-  GeneratedWorksheetContent,
-  WorksheetActivity,
-} from '../../../shared/types.js';
-import type {
   AssessScanInput,
   AssessScanOutput,
+  GeneratedWorksheet,
   GenerateWorksheetInput,
   ScanAssessor,
   WorksheetGenerator,
 } from './types.js';
+import { deriveWorksheetTitle } from './worksheetPrompt.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES = path.resolve(__dirname, '../../../fixtures');
@@ -24,14 +22,14 @@ function pickThemeKey(theme: string): string {
   return 'sea-life';
 }
 
-function loadMockGenerator(themeKey: string): GeneratedWorksheetContent {
-  const file = path.join(FIXTURES, 'mocks', `generate-${themeKey}.json`);
-  if (fs.existsSync(file)) {
-    return JSON.parse(fs.readFileSync(file, 'utf8')) as GeneratedWorksheetContent;
+function loadFixturePng(themeKey: string): Buffer {
+  const preferred = path.join(FIXTURES, 'mocks', `worksheet-${themeKey}.png`);
+  if (fs.existsSync(preferred)) return fs.readFileSync(preferred);
+  const fallback = path.join(FIXTURES, 'mocks', 'worksheet-sea-life.png');
+  if (!fs.existsSync(fallback)) {
+    throw new Error(`Missing demo worksheet fixture at ${fallback}`);
   }
-  return JSON.parse(
-    fs.readFileSync(path.join(FIXTURES, 'mocks', 'generate-sea-life.json'), 'utf8'),
-  ) as GeneratedWorksheetContent;
+  return fs.readFileSync(fallback);
 }
 
 function loadMockAssessor(themeKey: string): AssessScanOutput {
@@ -44,45 +42,15 @@ function loadMockAssessor(themeKey: string): AssessScanOutput {
   ) as AssessScanOutput;
 }
 
-function adaptActivities(
-  template: GeneratedWorksheetContent,
-  input: GenerateWorksheetInput,
-): GeneratedWorksheetContent {
-  const activities: WorksheetActivity[] = input.topics.map((topic, i) => {
-    const base = template.activities[i % template.activities.length];
-    return {
-      topicId: topic.id,
-      title: base?.title ?? `${topic.name} adventure`,
-      instructions:
-        base?.instructions ??
-        `Explore ${topic.name} through a ${input.theme} adventure.`,
-      prompt:
-        base?.prompt ??
-        (topic.assessmentPrompt
-          ? topic.assessmentPrompt.replaceAll('{{name}}', input.child.name)
-          : `Show what you know about ${topic.name}.`),
-      answerSpaceHint: base?.answerSpaceHint ?? 'Write or draw your answer in the box.',
-      illustrationHint:
-        base?.illustrationHint ?? `A gentle ${input.theme} illustration for ${topic.name}`,
-    };
-  });
-
-  return {
-    title: template.title.replaceAll('{{name}}', input.child.name),
-    intro: template.intro
-      .replaceAll('{{name}}', input.child.name)
-      .replaceAll('{{theme}}', input.theme),
-    theme: input.theme,
-    activities,
-    closingNote: template.closingNote.replaceAll('{{name}}', input.child.name),
-  };
-}
-
 export class DemoWorksheetGenerator implements WorksheetGenerator {
-  async generate(input: GenerateWorksheetInput): Promise<GeneratedWorksheetContent> {
+  async generate(input: GenerateWorksheetInput): Promise<GeneratedWorksheet> {
     const themeKey = pickThemeKey(input.theme);
-    const template = loadMockGenerator(themeKey);
-    return adaptActivities(template, input);
+    return {
+      title: deriveWorksheetTitle(input.theme, input.topics),
+      theme: input.theme,
+      imageBuffer: loadFixturePng(themeKey),
+      mimeType: 'image/png',
+    };
   }
 }
 

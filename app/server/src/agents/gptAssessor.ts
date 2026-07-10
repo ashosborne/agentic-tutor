@@ -19,30 +19,17 @@ export class GptScanAssessor implements ScanAssessor {
       assessmentPrompt: t.assessmentPrompt?.replaceAll('{{name}}', input.child.name),
     }));
 
-    const response = await this.client.chat.completions.create({
-      model: 'gpt-4o',
-      response_format: { type: 'json_object' },
-      messages: [
-        {
-          role: 'system',
-          content:
-            'You are an expert UK primary teacher assessing a scanned completed worksheet. Be kind, precise, and pedagogical. Return JSON only.',
-        },
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: `Child: ${input.child.name}, age ${input.child.age}
+    const content: OpenAI.Chat.Completions.ChatCompletionContentPart[] = [
+      {
+        type: 'text',
+        text: `Child: ${input.child.name}, age ${input.child.age}
 Theme: ${input.theme}
 
 Topics and mastery evidence to assess:
 ${JSON.stringify(topicBriefs, null, 2)}
 
-Activities on the sheet:
-${JSON.stringify(input.activities, null, 2)}
-
-Look at the scan. For each topic return score 0-1, short evidence bullets, and recommendation:
+You will see ${input.worksheetImageBase64 ? 'two images: (1) the blank generated worksheet, then (2) the completed scan' : 'the completed worksheet scan'}.
+Compare the child's work against the learning objectives. For each topic return score 0-1, short evidence bullets, and recommendation:
 - advance (strong understanding)
 - practice (partial / needs more work)
 - refresh (confused or forgotten prior knowledge)
@@ -54,14 +41,37 @@ JSON shape:
   ],
   "summary": string (plain English for a non-technical parent)
 }`,
-            },
-            {
-              type: 'image_url',
-              image_url: {
-                url: `data:${input.mimeType};base64,${input.imageBase64}`,
-              },
-            },
-          ],
+      },
+    ];
+
+    if (input.worksheetImageBase64 && input.worksheetMimeType) {
+      content.push({
+        type: 'image_url',
+        image_url: {
+          url: `data:${input.worksheetMimeType};base64,${input.worksheetImageBase64}`,
+        },
+      });
+    }
+
+    content.push({
+      type: 'image_url',
+      image_url: {
+        url: `data:${input.mimeType};base64,${input.imageBase64}`,
+      },
+    });
+
+    const response = await this.client.chat.completions.create({
+      model: 'gpt-4o',
+      response_format: { type: 'json_object' },
+      messages: [
+        {
+          role: 'system',
+          content:
+            'You are an expert UK primary teacher assessing a scanned completed worksheet. Be kind, precise, and pedagogical. Return JSON only.',
+        },
+        {
+          role: 'user',
+          content,
         },
       ],
     });

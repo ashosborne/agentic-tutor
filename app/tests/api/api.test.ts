@@ -167,6 +167,10 @@ describe('API routes', () => {
     expect(worksheet.topicIds.length).toBeGreaterThan(0);
     expect(worksheet.pdfPath).toBeTruthy();
     expect(worksheet.domainFocus).toBeNull();
+
+    const file = await api.request(`/worksheets/${worksheet.id}/file`);
+    expect(file.status).toBe(200);
+    expect(file.headers.get('content-type')).toMatch(/image\/png/);
   });
 
   it('creates a worksheet with domain focus', async () => {

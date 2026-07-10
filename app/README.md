@@ -1,6 +1,6 @@
 # Agentic Tutor
 
-Local web app for generating themed printable PDF worksheets and tracking each child's progress against the Marble Skill Taxonomy.
+Local web app for generating themed printable worksheet images and tracking each child's progress against the Marble Skill Taxonomy.
 
 ## Quick start
 
@@ -23,15 +23,14 @@ Set in `app/.env`:
 
 ```
 DEMO_MODE=false
-ANTHROPIC_API_KEY=...
 OPENAI_API_KEY=...
 ```
 
-Or toggle Demo mode off in **Settings** (keys still required).
+Or toggle Demo mode off in **Settings** (OpenAI key still required).
 
 | Agent | Model |
 |---|---|
-| Worksheet generator | Claude Sonnet |
+| Worksheet generator | OpenAI `gpt-image-1` (prompt from `docs/examplePrompt.md` + design brief) |
 | Scan assessor | GPT-4o (vision) |
 
 ## Scripts
@@ -46,4 +45,4 @@ Or toggle Demo mode off in **Settings** (keys still required).
 
 ## Data
 
-Child profiles, mastery, worksheets, and assessments live in `app/storage/` (SQLite via Node’s built-in `node:sqlite` + PDFs/scans). Taxonomy is read from repo `data/`.
+Child profiles, mastery, worksheets, and assessments live in `app/storage/` (SQLite via Node’s built-in `node:sqlite` + worksheet images/scans). Taxonomy is read from repo `data/`.

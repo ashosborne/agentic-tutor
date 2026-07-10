@@ -107,21 +107,10 @@ export interface Assessment {
   createdAt: string;
 }
 
-export interface WorksheetActivity {
-  topicId: string;
+/** Lightweight metadata stored in worksheet.contentJson after image generation. */
+export interface GeneratedWorksheetMeta {
   title: string;
-  instructions: string;
-  prompt: string;
-  answerSpaceHint: string;
-  illustrationHint: string;
-}
-
-export interface GeneratedWorksheetContent {
-  title: string;
-  intro: string;
   theme: string;
-  activities: WorksheetActivity[];
-  closingNote: string;
 }
 
 export interface DurationOption {
