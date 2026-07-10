@@ -25,7 +25,7 @@ test.describe('Agentic Tutor happy path', () => {
     await page.getByRole('button', { name: /Create worksheet/i }).click();
 
     await expect(page.getByText(/Ready to print/i)).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByRole('link', { name: /Download/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /View \/ print|Download/i })).toBeVisible();
 
     await page.getByRole('button', { name: /Upload scan when done/i }).click();
     await expect(page.getByText(/Upload scan/i)).toBeVisible();

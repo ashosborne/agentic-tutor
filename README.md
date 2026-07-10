@@ -42,7 +42,7 @@ These reference worksheets were generated with [`docs/examplePrompt.md`](docs/ex
 
 ## Roadmap
 
-- **Agent quality** — Drive worksheet generation against the deep-research findings above.
+- **Agent quality** — Worksheet generation now uses [`docs/examplePrompt.md`](docs/examplePrompt.md) plus the deep-research design brief via OpenAI image generation.
 - **Per-child fine-tuning** — Have the agent A/B approaches with each child and adapt worksheets to how that child learns.
 - **Supplemental lead** — Have the agent lead the child’s supplemental education over time.
 - **Home printing** — Automatically integrate with a local printer to print children’s worksheets each day.

@@ -1,12 +1,12 @@
 import { isDemoMode, getConfig } from '../config.js';
 import { DemoScanAssessor, DemoWorksheetGenerator } from './demo.js';
-import { ClaudeWorksheetGenerator } from './claudeGenerator.js';
+import { OpenAIWorksheetImageGenerator } from './openaiImageGenerator.js';
 import { GptScanAssessor } from './gptAssessor.js';
 import type { ScanAssessor, WorksheetGenerator } from './types.js';
 
 export function getWorksheetGenerator(): WorksheetGenerator {
   if (isDemoMode()) return new DemoWorksheetGenerator();
-  return new ClaudeWorksheetGenerator();
+  return new OpenAIWorksheetImageGenerator();
 }
 
 export function getScanAssessor(): ScanAssessor {

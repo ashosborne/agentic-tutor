@@ -245,16 +245,27 @@ api.get('/worksheets/:id', (c) => {
   return c.json(worksheet);
 });
 
+function contentTypeForWorksheetFile(filePath: string): { type: string; ext: string } {
+  const lower = filePath.toLowerCase();
+  if (lower.endsWith('.png')) return { type: 'image/png', ext: 'png' };
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
+    return { type: 'image/jpeg', ext: 'jpg' };
+  }
+  if (lower.endsWith('.webp')) return { type: 'image/webp', ext: 'webp' };
+  if (lower.endsWith('.html')) return { type: 'text/html', ext: 'html' };
+  return { type: 'application/pdf', ext: 'pdf' };
+}
+
 api.get('/worksheets/:id/file', (c) => {
   const worksheet = getWorksheet(c.req.param('id'));
   if (!worksheet?.pdfPath || !fs.existsSync(worksheet.pdfPath)) {
     return c.json({ error: 'File not found' }, 404);
   }
   const data = fs.readFileSync(worksheet.pdfPath);
-  const isHtml = worksheet.pdfPath.endsWith('.html');
+  const { type, ext } = contentTypeForWorksheetFile(worksheet.pdfPath);
   return c.body(data, 200, {
-    'Content-Type': isHtml ? 'text/html' : 'application/pdf',
-    'Content-Disposition': `inline; filename="${worksheet.id}.${isHtml ? 'html' : 'pdf'}"`,
+    'Content-Type': type,
+    'Content-Disposition': `inline; filename="${worksheet.id}.${ext}"`,
   });
 });
 

@@ -151,9 +151,10 @@ export function SettingsPage() {
           <p className="meta">
             Demo mode: <strong>{settings.demoMode ? 'On' : 'Off'}</strong>
             {' · '}
-            Claude key: {settings.anthropicConfigured ? 'set' : 'missing'}
-            {' · '}
             OpenAI key: {settings.openaiConfigured ? 'set' : 'missing'}
+            {' '}
+            (worksheets + assessment)
+            {settings.anthropicConfigured ? ' · Anthropic key: set (unused)' : ''}
           </p>
           <div className="row">
             <button

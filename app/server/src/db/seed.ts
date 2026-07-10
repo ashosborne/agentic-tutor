@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid';
-import type { Child, TopicMastery, Worksheet } from '../../../shared/types.js';
+import type { Child, GeneratedWorksheetMeta, TopicMastery, Worksheet } from '../../../shared/types.js';
 import { ensureStorageDirs, getDb, closeDb, STORAGE_DIR } from './database.js';
 import {
   insertWorksheet,
@@ -10,9 +10,8 @@ import {
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { renderWorksheetHtml, writeWorksheetPdf } from '../pdf/render.js';
+import { deriveWorksheetTitle } from '../agents/worksheetPrompt.js';
 import { loadTaxonomy } from '../services/taxonomy.js';
-import type { GeneratedWorksheetContent } from '../../../shared/types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES = path.resolve(__dirname, '../../../fixtures');
@@ -87,49 +86,32 @@ function createSampleScan(): string {
   const scanPath = path.join(scansDir, 'demo-scan-sea-life.svg');
   fs.writeFileSync(scanPath, svg, 'utf8');
 
-  // Also copy into fixtures for reference
   const fixtureScan = path.join(FIXTURES, 'scans', 'demo-scan-sea-life.svg');
   fs.mkdirSync(path.dirname(fixtureScan), { recursive: true });
   fs.writeFileSync(fixtureScan, svg, 'utf8');
   return scanPath;
 }
 
-async function seedWorksheet(
+function seedWorksheet(
   child: Child,
   theme: string,
   topicIds: string[],
-  mockFile: string,
-): Promise<Worksheet> {
+  fixturePng: string,
+): Worksheet {
   const taxonomy = loadTaxonomy();
-  const template = JSON.parse(
-    fs.readFileSync(path.join(FIXTURES, 'mocks', mockFile), 'utf8'),
-  ) as GeneratedWorksheetContent;
-
-  const content: GeneratedWorksheetContent = {
-    ...template,
-    title: template.title.replaceAll('{{name}}', child.name),
-    intro: template.intro
-      .replaceAll('{{name}}', child.name)
-      .replaceAll('{{theme}}', theme),
-    theme,
-    closingNote: template.closingNote.replaceAll('{{name}}', child.name),
-    activities: topicIds.map((topicId, i) => {
-      const base = template.activities[i % template.activities.length];
-      const topic = taxonomy.topicsById.get(topicId);
-      return {
-        topicId,
-        title: base.title,
-        instructions: base.instructions,
-        prompt: base.prompt,
-        answerSpaceHint: base.answerSpaceHint,
-        illustrationHint: base.illustrationHint ?? `Illustration for ${topic?.name}`,
-      };
-    }),
-  };
+  const topics = topicIds
+    .map((id) => taxonomy.topicsById.get(id))
+    .filter((t): t is NonNullable<typeof t> => Boolean(t));
 
   const id = `ws_seed_${nanoid(8)}`;
-  const html = renderWorksheetHtml(child, content, taxonomy.topicsById);
-  const pdfPath = await writeWorksheetPdf(id, html);
+  const worksheetsDir = path.join(STORAGE_DIR, 'worksheets');
+  fs.mkdirSync(worksheetsDir, { recursive: true });
+  const filePath = path.join(worksheetsDir, `${id}.png`);
+  const source = path.join(FIXTURES, 'mocks', fixturePng);
+  fs.copyFileSync(source, filePath);
+
+  const title = deriveWorksheetTitle(theme, topics);
+  const meta: GeneratedWorksheetMeta = { title, theme };
 
   const worksheet: Worksheet = {
     id,
@@ -139,9 +121,9 @@ async function seedWorksheet(
     subjectFocus: null,
     domainFocus: null,
     topicIds,
-    title: content.title,
-    pdfPath,
-    contentJson: JSON.stringify(content),
+    title,
+    pdfPath: filePath,
+    contentJson: JSON.stringify(meta),
     status: 'ready',
     createdAt: new Date().toISOString(),
   };
@@ -182,9 +164,9 @@ export async function seedDatabase(options?: { reset?: boolean }): Promise<void>
 
   setSetting('demo_mode', 'true');
 
-  await seedWorksheet(CHILD_MAYA, 'sea life', ['mt_OvyoRo47K-', 'mt_N8CpN1EJrP', 'mt_zVLOm6U7bh'], 'generate-sea-life.json');
-  await seedWorksheet(CHILD_MAYA, 'unicorns', ['mt_zuKAX6lcYR', 'mt_QEr24lqzvH'], 'generate-unicorns.json');
-  await seedWorksheet(CHILD_LEO, 'ponies', ['mt_r0VXbfAmsH', 'mt_YXVQaufkKO', 'mt_HhuSDxwDNM'], 'generate-ponies.json');
+  seedWorksheet(CHILD_MAYA, 'sea life', ['mt_OvyoRo47K-', 'mt_N8CpN1EJrP', 'mt_zVLOm6U7bh'], 'worksheet-sea-life.png');
+  seedWorksheet(CHILD_MAYA, 'unicorns', ['mt_zuKAX6lcYR', 'mt_QEr24lqzvH'], 'worksheet-unicorns.png');
+  seedWorksheet(CHILD_LEO, 'ponies', ['mt_r0VXbfAmsH', 'mt_YXVQaufkKO', 'mt_HhuSDxwDNM'], 'worksheet-ponies.png');
 
   createSampleScan();
 

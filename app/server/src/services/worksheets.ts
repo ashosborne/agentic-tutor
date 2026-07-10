@@ -1,5 +1,7 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { nanoid } from 'nanoid';
-import type { GeneratedWorksheetContent, Worksheet } from '../../../shared/types.js';
+import type { GeneratedWorksheetMeta, Worksheet } from '../../../shared/types.js';
 import { resolveTopicCount, selectTopicsForWorksheet } from '../../../shared/topicSelection.js';
 import { getWorksheetGenerator } from '../agents/index.js';
 import {
@@ -8,8 +10,8 @@ import {
   listMastery,
   updateWorksheetStatus,
 } from '../db/repository.js';
+import { STORAGE_DIR } from '../db/database.js';
 import { loadTaxonomy } from './taxonomy.js';
-import { renderWorksheetHtml, writeWorksheetPdf } from '../pdf/render.js';
 
 export interface CreateWorksheetRequest {
   childId: string;
@@ -49,22 +51,23 @@ export async function createWorksheet(
   }
 
   const generator = getWorksheetGenerator();
-  const content: GeneratedWorksheetContent = await generator.generate({
+  const generated = await generator.generate({
     child,
     theme: req.theme,
     durationMinutes: req.durationMinutes,
     topics,
   });
 
-  // Ensure topicIds on activities match selected topics
-  content.activities = content.activities.map((a, i) => ({
-    ...a,
-    topicId: topics[i]?.id ?? a.topicId,
-  }));
-
   const id = nanoid();
-  const html = renderWorksheetHtml(child, content, taxonomy.topicsById);
-  const pdfPath = await writeWorksheetPdf(id, html);
+  const worksheetsDir = path.join(STORAGE_DIR, 'worksheets');
+  fs.mkdirSync(worksheetsDir, { recursive: true });
+  const filePath = path.join(worksheetsDir, `${id}.png`);
+  fs.writeFileSync(filePath, generated.imageBuffer);
+
+  const meta: GeneratedWorksheetMeta = {
+    title: generated.title,
+    theme: generated.theme,
+  };
 
   const worksheet: Worksheet = {
     id,
@@ -74,9 +77,9 @@ export async function createWorksheet(
     subjectFocus: req.subjectFocus ?? null,
     domainFocus: req.domainFocus ?? null,
     topicIds: topics.map((t) => t.id),
-    title: content.title,
-    pdfPath,
-    contentJson: JSON.stringify(content),
+    title: generated.title,
+    pdfPath: filePath,
+    contentJson: JSON.stringify(meta),
     status: 'ready',
     createdAt: new Date().toISOString(),
   };
