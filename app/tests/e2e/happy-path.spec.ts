@@ -13,7 +13,7 @@ test.describe('Agentic Tutor happy path', () => {
 
     await page.getByRole('button', { name: /Maya/i }).click();
     await expect(page.getByText(/Maya is growing/i)).toBeVisible();
-    await expect(page.getByLabel(/Concept constellation/i)).toBeVisible();
+    await expect(page.getByLabel(/Learning progress/i)).toBeVisible();
     await expect(page.getByText(/Needs learning/i).first()).toBeVisible();
     await expect(page.getByText(/Next focus:/i)).toBeVisible();
 
