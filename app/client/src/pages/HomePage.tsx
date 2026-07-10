@@ -18,7 +18,7 @@ export function HomePage() {
   return (
     <div className="fade-in">
       <section className="hero">
-        <p className="section-title">This weekend</p>
+        <p className="section-title">Today</p>
         <h1>Whose learning adventure?</h1>
         <p>
           Choose a child to create a themed printable worksheet, or upload a scan of

@@ -38,7 +38,7 @@ async function bootstrap() {
   } else {
     app.get('/', (c) =>
       c.text(
-        'Weekend Worksheets API is running. Start the Vite client with: npm run dev:client',
+        'Agentic Tutor API is running. Start the Vite client with: npm run dev:client',
       ),
     );
   }

@@ -1,5 +1,5 @@
 {
-  "name": "weekend-worksheets",
+  "name": "agentic-tutor",
   "version": "1.0.0",
   "description": "Home-server hobby app for tracking children's learning and generating tailored printable worksheets against the Marble Skill Taxonomy.",
   "private": true,
@@ -10,11 +10,11 @@
   ],
   "scripts": {
     "validate": "node scripts/validate.mjs",
-    "dev": "npm run dev -w weekend-worksheets",
-    "build": "npm run build -w weekend-worksheets",
-    "start": "npm run start -w weekend-worksheets",
-    "seed": "npm run seed -w weekend-worksheets",
-    "test": "npm run test -w weekend-worksheets",
-    "test:e2e": "npm run test:e2e -w weekend-worksheets"
+    "dev": "npm run dev -w agentic-tutor",
+    "build": "npm run build -w agentic-tutor",
+    "start": "npm run start -w agentic-tutor",
+    "seed": "npm run seed -w agentic-tutor",
+    "test": "npm run test -w agentic-tutor",
+    "test:e2e": "npm run test:e2e -w agentic-tutor"
   }
 }

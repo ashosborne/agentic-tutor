@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-test.describe('Weekend Worksheets happy path', () => {
+test.describe('Agentic Tutor happy path', () => {
   test('home shows children and can generate + assess in demo mode', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: /Whose learning adventure/i })).toBeVisible();

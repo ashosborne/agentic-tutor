@@ -11,7 +11,7 @@ export function App() {
     <div className="app-shell">
       <header className="topbar">
         <NavLink to="/" className="brand">
-          <span className="brand-mark">Weekend Worksheets</span>
+          <span className="brand-mark">Agentic Tutor</span>
           <span className="brand-sub">Home learning, gently guided</span>
         </NavLink>
         <nav className="nav-links">

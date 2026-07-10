@@ -153,7 +153,7 @@ export function renderWorksheetHtml(
 <body>
   <div class="sheet">
     <header>
-      <p class="brand">Weekend Worksheets</p>
+      <p class="brand">Agentic Tutor</p>
       <h1>${escapeHtml(content.title)}</h1>
       <p class="intro">${escapeHtml(content.intro)}</p>
       <p class="child-line">For ${escapeHtml(child.name)} · Theme: ${escapeHtml(content.theme)}</p>

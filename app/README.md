@@ -1,4 +1,4 @@
-# Weekend Worksheets
+# Agentic Tutor
 
 Local web app for generating themed printable PDF worksheets and tracking each child's progress against the Marble Skill Taxonomy.
 
@@ -8,7 +8,7 @@ Local web app for generating themed printable PDF worksheets and tracking each c
 # from repo root
 npm install
 cp app/.env.example app/.env
-npm run seed -w weekend-worksheets   # optional; auto-seeds on first API boot
+npm run seed -w agentic-tutor   # optional; auto-seeds on first API boot
 npm run dev
 ```
 

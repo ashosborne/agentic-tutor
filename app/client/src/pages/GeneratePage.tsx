@@ -120,7 +120,7 @@ export function GeneratePage() {
       <section className="hero">
         <p className="section-title">New worksheet for {child.name}</p>
         <h1>Pick a theme &amp; time</h1>
-        <p>Sea life, unicorns, ponies — whatever sparks their imagination this weekend.</p>
+        <p>Sea life, unicorns, ponies — whatever sparks their imagination.</p>
       </section>
 
       <form className="panel stack" onSubmit={onGenerate}>

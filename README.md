@@ -1,4 +1,4 @@
-# Weekend Worksheets
+# Agentic Tutor
 
 A hobby project designed to run on a **home server**: local-first worksheet generation and progress tracking for primary-age children. Not a hosted SaaS — install it, keep the data on your machine, and run it yourself.
 
