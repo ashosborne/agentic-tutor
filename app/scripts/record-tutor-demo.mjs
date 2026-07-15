@@ -192,6 +192,7 @@ async function main() {
   } finally {
     stop();
     await sleep(500);
+    process.exit(0);
   }
 }
 
