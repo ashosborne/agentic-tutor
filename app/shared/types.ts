@@ -111,6 +111,13 @@ export interface Assessment {
 export interface GeneratedWorksheetMeta {
   title: string;
   theme: string;
+  designVariant?: DesignVariantMeta | null;
+}
+
+export interface DesignVariantMeta {
+  testId: AbTestId;
+  arm: DesignArm;
+  label: string;
 }
 
 export interface DurationOption {
@@ -125,6 +132,132 @@ export const DURATION_OPTIONS: DurationOption[] = [
   { minutes: 30, topicCount: 3, label: '30 minutes' },
   { minutes: 45, topicCount: 4, label: '45 minutes' },
 ];
+
+/** Guided tutor duration chips — age-calibrated research defaults first. */
+export const TUTOR_DURATION_OPTIONS: DurationOption[] = [
+  { minutes: 8, topicCount: 1, label: 'About 8 minutes' },
+  { minutes: 12, topicCount: 1, label: 'About 12 minutes' },
+  { minutes: 15, topicCount: 1, label: '15 minutes' },
+  { minutes: 20, topicCount: 2, label: '20 minutes' },
+  { minutes: 30, topicCount: 3, label: '30 minutes' },
+];
+
+/** Print-relevant A/B tests from docs/deep-research-report.md. */
+export type AbTestId =
+  | 'clutter'
+  | 'goal_framing'
+  | 'feedback_timing'
+  | 'choice'
+  | 'format';
+
+export type DesignArm = 'A' | 'B';
+
+export type TutorProfileStatus = 'needs_baseline' | 'active' | 'paused';
+
+export type ParentEffort = 'easy' | 'okay' | 'hard';
+
+export type CompletionLevel = 'yes' | 'mostly' | 'no';
+
+export type ReadingSupport = 'independent' | 'some_help' | 'read_aloud';
+
+export type SubjectConfidence = 'strong' | 'ok' | 'unsure' | 'tricky';
+
+export type DesignPrefs = Partial<Record<AbTestId, DesignArm | null>>;
+
+export interface ActiveExperiment {
+  testId: AbTestId;
+  /** Arm to assign on the next worksheet. */
+  nextArm: DesignArm;
+  armACount: number;
+  armBCount: number;
+  startedAt: string;
+}
+
+export interface CompletedExperiment {
+  testId: AbTestId;
+  winner: DesignArm | null;
+  reason: string;
+  completedAt: string;
+  meanScoreA: number;
+  meanScoreB: number;
+}
+
+export interface BaselineAnswers {
+  enjoySubjects: string[];
+  trickySubjects: string[];
+  readingSupport: ReadingSupport;
+  focusMinutes: number;
+  mathsConfidence: SubjectConfidence;
+  englishConfidence: SubjectConfidence;
+  otherNotes?: string;
+  wantDiagnosticWorksheet?: boolean;
+}
+
+export interface TutorProfile {
+  childId: string;
+  status: TutorProfileStatus;
+  baselineSummary: string | null;
+  insightsSummary: string | null;
+  designPrefs: DesignPrefs;
+  activeExperiment: ActiveExperiment | null;
+  completedExperiments: CompletedExperiment[];
+  baselineAnswers: BaselineAnswers | null;
+  updatedAt: string;
+}
+
+export interface SessionReport {
+  id: string;
+  childId: string;
+  worksheetId: string;
+  assessmentId: string | null;
+  testId: AbTestId | null;
+  arm: DesignArm | null;
+  completedCore: CompletionLevel;
+  timeMinutes: number;
+  helpCount: number;
+  enjoyment: number;
+  parentEffort: ParentEffort;
+  errorNotes: string | null;
+  learningScore: number;
+  compositeScore: number;
+  createdAt: string;
+}
+
+export interface LessonProposal {
+  childId: string;
+  topicId: string;
+  topicName: string | null;
+  subject: string;
+  domain: string;
+  theme: string;
+  durationMinutes: number;
+  why: string;
+  experimentNote: string | null;
+  designVariant: DesignVariantMeta | null;
+}
+
+export interface TutorDashboard {
+  profile: TutorProfile;
+  proposal: LessonProposal | null;
+  experimentCard: {
+    title: string;
+    body: string;
+    progressLabel: string;
+  } | null;
+  nextStep: 'baseline' | 'lesson' | 'paused';
+}
+
+export interface TutorInsightView {
+  adopted: Array<{ testId: AbTestId; arm: DesignArm; label: string; detail: string }>;
+  inProgress: {
+    testId: AbTestId;
+    title: string;
+    body: string;
+    progressLabel: string;
+  } | null;
+  summary: string;
+  completed: CompletedExperiment[];
+}
 
 export type RagLevel = 'red' | 'amber' | 'green';
 

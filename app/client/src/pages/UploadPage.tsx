@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { Assessment, Worksheet } from '@shared/types';
+import { recommendationHint, recommendationLabel } from '@shared/assessmentLabels';
 import { api } from '../lib/api';
 
 export function UploadPage() {
   const { id, worksheetId } = useParams<{ id: string; worksheetId: string }>();
+  const navigate = useNavigate();
   const [worksheet, setWorksheet] = useState<Worksheet | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +52,8 @@ export function UploadPage() {
             {assessment.results.map((r) => (
               <div key={r.topicId} className="list-item">
                 <div>
-                  <strong>{r.recommendation}</strong>
+                  <strong>{recommendationLabel(r.recommendation)}</strong>
+                  <p className="meta">{recommendationHint(r.recommendation)}</p>
                   <p className="meta">{r.evidence.join(' · ')}</p>
                 </div>
                 <span className="status">{Math.round(r.score * 100)}%</span>
@@ -59,10 +62,17 @@ export function UploadPage() {
           </div>
         </section>
         <div className="row">
-          <Link className="btn" to={`/children/${id}/progress`}>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => navigate(`/children/${id}/tutor/review/${worksheetId}`)}
+          >
+            Tell us how it felt
+          </button>
+          <Link className="btn secondary" to={`/children/${id}/progress`}>
             View progress
           </Link>
-          <Link className="btn secondary" to={`/children/${id}`}>
+          <Link className="btn ghost" to={`/children/${id}`}>
             Back
           </Link>
         </div>

@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import type { Child, LearningPath, ProgressSummary, Worksheet } from '@shared/types';
+import type {
+  Child,
+  LearningPath,
+  ProgressSummary,
+  TutorDashboard,
+  Worksheet,
+} from '@shared/types';
 import { api } from '../lib/api';
 import { LearningProgressMap } from '../components/LearningProgressMap';
 
@@ -10,6 +16,7 @@ export function ChildPage() {
   const [progress, setProgress] = useState<ProgressSummary | null>(null);
   const [path, setPath] = useState<LearningPath | null>(null);
   const [worksheets, setWorksheets] = useState<Worksheet[]>([]);
+  const [tutor, setTutor] = useState<TutorDashboard | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -19,18 +26,28 @@ export function ChildPage() {
       api.getProgress(id),
       api.getLearningPath(id),
       api.listWorksheets(id),
+      api.getTutorDashboard(id),
     ])
-      .then(([c, p, lp, w]) => {
+      .then(([c, p, lp, w, t]) => {
         setChild(c);
         setProgress(p);
         setPath(lp);
         setWorksheets(w);
+        setTutor(t);
       })
       .catch((e: Error) => setError(e.message));
   }, [id]);
 
   if (error) return <p className="error">{error}</p>;
-  if (!child || !progress || !path) return <p className="muted">Loading…</p>;
+  if (!child || !progress || !path || !tutor) return <p className="muted">Loading…</p>;
+
+  const needsBaseline = tutor.nextStep === 'baseline';
+  const primaryTo = needsBaseline
+    ? `/children/${child.id}/tutor/baseline`
+    : `/children/${child.id}/tutor/lesson`;
+  const primaryLabel = needsBaseline
+    ? `Get to know ${child.name}`
+    : 'Continue with the tutor';
 
   return (
     <div className="fade-in stack">
@@ -43,9 +60,33 @@ export function ChildPage() {
         </p>
       </section>
 
+      <section className="panel stack tutor-cta">
+        <p className="section-title">Guided tutor</p>
+        <p>
+          {needsBaseline
+            ? `Start with a short chat about ${child.name} — then we’ll suggest the right first worksheet.`
+            : `We’ll propose today’s focus, create a worksheet, and learn which styles help ${child.name} most.`}
+        </p>
+        {tutor.experimentCard && !needsBaseline && (
+          <p className="meta">
+            {tutor.experimentCard.title}. {tutor.experimentCard.progressLabel}.
+          </p>
+        )}
+        <div className="row">
+          <Link className="btn" to={primaryTo}>
+            {primaryLabel}
+          </Link>
+          {!needsBaseline && (
+            <Link className="btn secondary" to={`/children/${child.id}/tutor/insights`}>
+              What we’re learning
+            </Link>
+          )}
+        </div>
+      </section>
+
       <div className="row">
-        <Link className="btn" to={`/children/${child.id}/generate`}>
-          Create worksheet
+        <Link className="btn secondary" to={`/children/${child.id}/generate`}>
+          Create worksheet (advanced)
         </Link>
         <Link className="btn secondary" to={`/children/${child.id}/progress`}>
           Explore learning path
@@ -58,7 +99,7 @@ export function ChildPage() {
         <div>
           <p className="section-title">Recent worksheets</p>
           {worksheets.length === 0 && (
-            <p className="muted">No worksheets yet — create the first one.</p>
+            <p className="muted">No worksheets yet — continue with the tutor to begin.</p>
           )}
           <div className="list">
             {worksheets.map((ws) => (
@@ -83,6 +124,14 @@ export function ChildPage() {
                     ws.status === 'submitted') && (
                     <Link className="btn" to={`/children/${child.id}/upload/${ws.id}`}>
                       Upload scan
+                    </Link>
+                  )}
+                  {ws.status === 'assessed' && (
+                    <Link
+                      className="btn"
+                      to={`/children/${child.id}/tutor/review/${ws.id}`}
+                    >
+                      How it went
                     </Link>
                   )}
                 </div>

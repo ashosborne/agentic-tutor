@@ -110,6 +110,39 @@ function migrate(db: AppDatabase): void {
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS tutor_profiles (
+      child_id TEXT PRIMARY KEY,
+      status TEXT NOT NULL,
+      baseline_summary TEXT,
+      insights_summary TEXT,
+      design_prefs_json TEXT NOT NULL DEFAULT '{}',
+      active_experiment_json TEXT,
+      completed_experiments_json TEXT NOT NULL DEFAULT '[]',
+      baseline_answers_json TEXT,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (child_id) REFERENCES children(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS session_reports (
+      id TEXT PRIMARY KEY,
+      child_id TEXT NOT NULL,
+      worksheet_id TEXT NOT NULL,
+      assessment_id TEXT,
+      test_id TEXT,
+      arm TEXT,
+      completed_core TEXT NOT NULL,
+      time_minutes REAL NOT NULL,
+      help_count INTEGER NOT NULL,
+      enjoyment INTEGER NOT NULL,
+      parent_effort TEXT NOT NULL,
+      error_notes TEXT,
+      learning_score REAL NOT NULL,
+      composite_score REAL NOT NULL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (child_id) REFERENCES children(id) ON DELETE CASCADE,
+      FOREIGN KEY (worksheet_id) REFERENCES worksheets(id) ON DELETE CASCADE
+    );
   `);
 
   ensureColumn(db, 'worksheets', 'domain_focus', 'TEXT');

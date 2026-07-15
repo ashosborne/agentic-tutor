@@ -56,10 +56,22 @@ These reference worksheets were generated with [`docs/examplePrompt.md`](docs/ex
 
 ![Pony-themed looking-after-money worksheet generated with Claude Sonnet 5](docs/sonnet-5-pony-worksheet.png)
 
+## Guided tutor (per-child fine-tuning)
+
+The app includes a parent-friendly **guided tutor** loop:
+
+1. **Get to know them** — a short baseline questionnaire seeds a starting picture of the child’s strengths and tricky spots.
+2. **Today’s lesson** — the tutor proposes a focus topic, theme, and age-appropriate time.
+3. **Practice** — a printable worksheet is generated; behind the scenes one research-backed design style is under test (calm pages, clear goals, choice, etc. — see [`docs/deep-research-report.md`](docs/deep-research-report.md)).
+4. **How it went** — after you upload a scan, a few taps (finished? time? help? faces?) teach the tutor what helps *this* child.
+5. **Insights** — plain-English notes on styles that seem to help, with an optional parent override.
+
+Parents never need to think about AI or experiments — the primary button is simply **Continue with the tutor**. Advanced “create worksheet yourself” remains available.
+
 ## Roadmap
 
 - **Agent quality** — Worksheet generation now uses [`docs/examplePrompt.md`](docs/examplePrompt.md) plus the deep-research design brief via OpenAI image generation.
-- **Per-child fine-tuning** — Have the agent A/B approaches with each child and adapt worksheets to how that child learns.
+- **Per-child fine-tuning** — ✅ Guided tutor with research-based A/B design experiments and per-child preferences.
 - **Supplemental lead** — Have the agent lead the child’s supplemental education over time.
 - **Home printing** — Automatically integrate with a local printer to print children’s worksheets each day.
 

@@ -1,9 +1,16 @@
 import type {
+  AbTestId,
   AppSettings,
   Assessment,
+  BaselineAnswers,
   Child,
+  DesignArm,
   LearningPath,
+  LessonProposal,
   ProgressSummary,
+  TutorDashboard,
+  TutorInsightView,
+  TutorProfile,
   Worksheet,
 } from '@shared/types';
 
@@ -119,4 +126,78 @@ export const api = {
     return res.json() as Promise<Assessment>;
   },
   getSubjects: () => request<string[]>('/api/taxonomy/subjects'),
+  getTutorDashboard: (id: string) =>
+    request<TutorDashboard>(`/api/children/${id}/tutor`),
+  submitBaseline: (id: string, answers: BaselineAnswers) =>
+    request<{
+      profile: TutorProfile;
+      diagnosticSuggested: boolean;
+      diagnosticWorksheet: Worksheet | null;
+    }>(`/api/children/${id}/tutor/baseline`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(answers),
+    }),
+  proposeLesson: (
+    id: string,
+    data?: {
+      theme?: string | null;
+      durationMinutes?: number | null;
+      preferTopicId?: string | null;
+    },
+  ) =>
+    request<LessonProposal>(`/api/children/${id}/tutor/propose`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data ?? {}),
+    }),
+  createTutorWorksheet: (
+    id: string,
+    data?: {
+      theme?: string | null;
+      durationMinutes?: number | null;
+      preferTopicId?: string | null;
+    },
+  ) =>
+    request<{ worksheet: Worksheet; proposal: LessonProposal }>(
+      `/api/children/${id}/tutor/worksheets`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data ?? {}),
+      },
+    ),
+  submitSessionReport: (
+    id: string,
+    worksheetId: string,
+    data: {
+      completedCore: 'yes' | 'mostly' | 'no';
+      timeMinutes: number;
+      helpCount: number;
+      enjoyment: number;
+      parentEffort: 'easy' | 'okay' | 'hard';
+      errorNotes?: string | null;
+    },
+  ) =>
+    request<{
+      report: unknown;
+      profile: TutorProfile;
+      decisionNote: string | null;
+    }>(`/api/children/${id}/tutor/sessions/${worksheetId}/report`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+  getTutorInsights: (id: string) =>
+    request<TutorInsightView>(`/api/children/${id}/tutor/insights`),
+  setTutorPref: (id: string, testId: AbTestId, arm: DesignArm) =>
+    request<TutorProfile>(`/api/children/${id}/tutor/prefs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ testId, arm }),
+    }),
+  getSessionReportStatus: (worksheetId: string) =>
+    request<{ report: unknown | null; needsReport: boolean }>(
+      `/api/worksheets/${worksheetId}/session-report`,
+    ),
 };

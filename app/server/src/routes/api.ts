@@ -18,9 +18,25 @@ import { assessWorksheetScan } from '../services/assess.js';
 import { getAgentStatus } from '../agents/index.js';
 import { getClusterSummary, loadTaxonomy } from '../services/taxonomy.js';
 import { buildLearningPathForChild } from '../services/learningPath.js';
-import type { Child } from '../../../shared/types.js';
+import {
+  createTutorWorksheet,
+  ensureTutorProfile,
+  getTutorDashboard,
+  getTutorInsights,
+  overrideDesignPref,
+  proposeTutorLesson,
+  submitBaseline,
+  submitSessionReport,
+} from '../services/tutor.js';
+import type {
+  AbTestId,
+  BaselineAnswers,
+  Child,
+  DesignArm,
+} from '../../../shared/types.js';
 import { deriveChildAgeFields, isValidDob } from '../../../shared/ukSchoolYear.js';
 import fs from 'node:fs';
+import { getSessionReportForWorksheet } from '../db/repository.js';
 
 export const api = new Hono();
 
@@ -305,4 +321,130 @@ api.get('/taxonomy/subjects', (c) => {
   const taxonomy = loadTaxonomy();
   const subjects = [...new Set(taxonomy.topics.map((t) => t.subject))].sort();
   return c.json(subjects);
+});
+
+api.get('/children/:id/tutor', (c) => {
+  const child = getChild(c.req.param('id'));
+  if (!child) return c.json({ error: 'Not found' }, 404);
+  ensureTutorProfile(child.id);
+  return c.json(getTutorDashboard(child.id));
+});
+
+api.post('/children/:id/tutor/baseline', async (c) => {
+  const child = getChild(c.req.param('id'));
+  if (!child) return c.json({ error: 'Not found' }, 404);
+  try {
+    const body = await c.req.json<BaselineAnswers>();
+    if (!body?.mathsConfidence || !body?.englishConfidence || !body?.readingSupport) {
+      return c.json({ error: 'Baseline answers are incomplete' }, 400);
+    }
+    const result = await submitBaseline(child.id, {
+      enjoySubjects: body.enjoySubjects ?? [],
+      trickySubjects: body.trickySubjects ?? [],
+      readingSupport: body.readingSupport,
+      focusMinutes: Number(body.focusMinutes) || 10,
+      mathsConfidence: body.mathsConfidence,
+      englishConfidence: body.englishConfidence,
+      otherNotes: body.otherNotes ?? '',
+      wantDiagnosticWorksheet: Boolean(body.wantDiagnosticWorksheet),
+    });
+    return c.json(result, 201);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Baseline failed';
+    return c.json({ error: message }, 400);
+  }
+});
+
+api.post('/children/:id/tutor/propose', async (c) => {
+  const child = getChild(c.req.param('id'));
+  if (!child) return c.json({ error: 'Not found' }, 404);
+  try {
+    const body = (await c.req.json().catch(() => ({}))) as {
+      theme?: string | null;
+      durationMinutes?: number | null;
+      preferTopicId?: string | null;
+    };
+    const proposal = proposeTutorLesson(child.id, body);
+    return c.json(proposal);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Could not propose a lesson';
+    return c.json({ error: message }, 400);
+  }
+});
+
+api.post('/children/:id/tutor/worksheets', async (c) => {
+  const child = getChild(c.req.param('id'));
+  if (!child) return c.json({ error: 'Not found' }, 404);
+  try {
+    const body = (await c.req.json().catch(() => ({}))) as {
+      theme?: string | null;
+      durationMinutes?: number | null;
+      preferTopicId?: string | null;
+    };
+    const result = await createTutorWorksheet(child.id, body);
+    return c.json(result, 201);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Could not create tutor worksheet';
+    return c.json({ error: message }, 400);
+  }
+});
+
+api.post('/children/:id/tutor/sessions/:worksheetId/report', async (c) => {
+  const child = getChild(c.req.param('id'));
+  if (!child) return c.json({ error: 'Not found' }, 404);
+  try {
+    const body = await c.req.json<{
+      completedCore: 'yes' | 'mostly' | 'no';
+      timeMinutes: number;
+      helpCount: number;
+      enjoyment: number;
+      parentEffort: 'easy' | 'okay' | 'hard';
+      errorNotes?: string | null;
+    }>();
+    if (!body?.completedCore || body.timeMinutes == null || body.enjoyment == null) {
+      return c.json({ error: 'Report is incomplete' }, 400);
+    }
+    const result = submitSessionReport(child.id, {
+      worksheetId: c.req.param('worksheetId'),
+      completedCore: body.completedCore,
+      timeMinutes: Number(body.timeMinutes),
+      helpCount: Number(body.helpCount) || 0,
+      enjoyment: Number(body.enjoyment),
+      parentEffort: body.parentEffort ?? 'okay',
+      errorNotes: body.errorNotes,
+    });
+    return c.json(result, 201);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Could not save report';
+    return c.json({ error: message }, 400);
+  }
+});
+
+api.get('/children/:id/tutor/insights', (c) => {
+  const child = getChild(c.req.param('id'));
+  if (!child) return c.json({ error: 'Not found' }, 404);
+  return c.json(getTutorInsights(child.id));
+});
+
+api.post('/children/:id/tutor/prefs', async (c) => {
+  const child = getChild(c.req.param('id'));
+  if (!child) return c.json({ error: 'Not found' }, 404);
+  try {
+    const body = await c.req.json<{ testId: AbTestId; arm: DesignArm }>();
+    if (!body?.testId || (body.arm !== 'A' && body.arm !== 'B')) {
+      return c.json({ error: 'testId and arm (A or B) are required' }, 400);
+    }
+    const profile = overrideDesignPref(child.id, body.testId, body.arm);
+    return c.json(profile);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Could not update preference';
+    return c.json({ error: message }, 400);
+  }
+});
+
+api.get('/worksheets/:id/session-report', (c) => {
+  const worksheet = getWorksheet(c.req.param('id'));
+  if (!worksheet) return c.json({ error: 'Not found' }, 404);
+  const report = getSessionReportForWorksheet(worksheet.id);
+  return c.json({ report, needsReport: !report && worksheet.status === 'assessed' });
 });

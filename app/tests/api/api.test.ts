@@ -255,4 +255,196 @@ describe('API routes', () => {
     const json = await settings.json();
     expect(json.demoMode).toBe(true);
   });
+
+  it('serves a seeded tutor dashboard for Maya', async () => {
+    const list = await api.request('/children');
+    const children = await list.json();
+    const maya = children.find((c: { name: string }) => c.name === 'Maya');
+    const res = await api.request(`/children/${maya.id}/tutor`);
+    expect(res.status).toBe(200);
+    const dash = await res.json();
+    expect(dash.profile.status).toBe('active');
+    expect(dash.nextStep).toBe('lesson');
+    expect(dash.proposal?.topicId).toBeTruthy();
+    expect(dash.experimentCard?.title).toMatch(/Clear goals/i);
+  });
+
+  it('runs baseline → tutor worksheet → assess → session report → insights', async () => {
+    const createChild = await api.request('/children', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Riley',
+        dateOfBirth: '2020-06-01',
+        interests: ['dinosaurs'],
+      }),
+    });
+    expect(createChild.status).toBe(201);
+    const riley = await createChild.json();
+
+    const before = await api.request(`/children/${riley.id}/tutor`);
+    expect(before.status).toBe(200);
+    const beforeDash = await before.json();
+    expect(beforeDash.profile.status).toBe('needs_baseline');
+    expect(beforeDash.nextStep).toBe('baseline');
+
+    const baseline = await api.request(`/children/${riley.id}/tutor/baseline`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        enjoySubjects: ['Mathematics'],
+        trickySubjects: ['English'],
+        readingSupport: 'some_help',
+        focusMinutes: 12,
+        mathsConfidence: 'ok',
+        englishConfidence: 'tricky',
+        otherNotes: 'Loves dinosaurs',
+        wantDiagnosticWorksheet: false,
+      }),
+    });
+    expect(baseline.status).toBe(201);
+    const baselineJson = await baseline.json();
+    expect(baselineJson.profile.status).toBe('active');
+    expect(baselineJson.profile.baselineSummary).toContain('Riley');
+    expect(baselineJson.diagnosticWorksheet).toBeNull();
+
+    const mastery = await api.request(`/children/${riley.id}/mastery`);
+    const masteryJson = await mastery.json();
+    expect(masteryJson.length).toBeGreaterThan(0);
+
+    const created = await api.request(`/children/${riley.id}/tutor/worksheets`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ theme: 'dinosaurs', durationMinutes: 12 }),
+    });
+    expect(created.status).toBe(201);
+    const createdJson = await created.json();
+    expect(createdJson.worksheet.status).toBe('ready');
+    expect(createdJson.proposal.designVariant?.testId).toBe('goal_framing');
+    expect(createdJson.proposal.designVariant?.arm).toBe('A');
+    const meta = JSON.parse(createdJson.worksheet.contentJson as string);
+    expect(meta.designVariant?.arm).toBe('A');
+
+    const form = new FormData();
+    form.append('file', new Blob(['scan'], { type: 'image/jpeg' }), 'scan.jpg');
+    const assess = await api.request(`/worksheets/${createdJson.worksheet.id}/assess`, {
+      method: 'POST',
+      body: form,
+    });
+    expect(assess.status).toBe(201);
+
+    const report = await api.request(
+      `/children/${riley.id}/tutor/sessions/${createdJson.worksheet.id}/report`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          completedCore: 'yes',
+          timeMinutes: 11,
+          helpCount: 1,
+          enjoyment: 4,
+          parentEffort: 'easy',
+          errorNotes: '',
+        }),
+      },
+    );
+    expect(report.status).toBe(201);
+    const reportJson = await report.json();
+    expect(reportJson.report.compositeScore).toBeGreaterThan(0.5);
+    expect(reportJson.profile.activeExperiment?.armACount).toBe(1);
+
+    const insights = await api.request(`/children/${riley.id}/tutor/insights`);
+    expect(insights.status).toBe(200);
+    const insightsJson = await insights.json();
+    expect(insightsJson.summary).toContain('Riley');
+    expect(insightsJson.inProgress?.testId).toBe('goal_framing');
+  });
+
+  it('generates an optional check-in worksheet from baseline', async () => {
+    const createChild = await api.request('/children', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Jordan',
+        dateOfBirth: '2021-01-01',
+        interests: ['unicorns'],
+      }),
+    });
+    const jordan = await createChild.json();
+
+    const baseline = await api.request(`/children/${jordan.id}/tutor/baseline`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        enjoySubjects: ['Mathematics'],
+        trickySubjects: [],
+        readingSupport: 'read_aloud',
+        focusMinutes: 8,
+        mathsConfidence: 'ok',
+        englishConfidence: 'ok',
+        wantDiagnosticWorksheet: true,
+      }),
+    });
+    expect(baseline.status).toBe(201);
+    const json = await baseline.json();
+    expect(json.diagnosticSuggested).toBe(true);
+    expect(json.diagnosticWorksheet?.status).toBe('ready');
+    expect(json.diagnosticWorksheet?.theme).toBe('unicorns');
+    const meta = JSON.parse(json.diagnosticWorksheet.contentJson as string);
+    // Check-in sheets must not consume an A/B experiment arm.
+    expect(meta.designVariant ?? null).toBeNull();
+
+    const dash = await api.request(`/children/${jordan.id}/tutor`);
+    const dashJson = await dash.json();
+    expect(dashJson.profile.activeExperiment?.armACount).toBe(0);
+    expect(dashJson.profile.activeExperiment?.nextArm).toBe('A');
+  });
+
+  it('adopts a design preference after enough paired session reports', async () => {
+    const list = await api.request('/children');
+    const children = await list.json();
+    const leo = children.find((c: { name: string }) => c.name === 'Leo');
+
+    async function runArmSession(theme: string) {
+      const created = await api.request(`/children/${leo.id}/tutor/worksheets`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ theme, durationMinutes: 12 }),
+      });
+      expect(created.status).toBe(201);
+      const createdJson = await created.json();
+      const form = new FormData();
+      form.append('file', new Blob(['scan'], { type: 'image/jpeg' }), 'scan.jpg');
+      const assess = await api.request(`/worksheets/${createdJson.worksheet.id}/assess`, {
+        method: 'POST',
+        body: form,
+      });
+      expect(assess.status).toBe(201);
+      const arm = createdJson.proposal.designVariant?.arm as 'A' | 'B';
+      const report = await api.request(
+        `/children/${leo.id}/tutor/sessions/${createdJson.worksheet.id}/report`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            completedCore: arm === 'B' ? 'yes' : 'mostly',
+            timeMinutes: arm === 'B' ? 12 : 18,
+            helpCount: arm === 'B' ? 0 : 3,
+            enjoyment: arm === 'B' ? 5 : 2,
+            parentEffort: arm === 'B' ? 'easy' : 'hard',
+          }),
+        },
+      );
+      expect(report.status).toBe(201);
+      return report.json();
+    }
+
+    await runArmSession('ponies');
+    await runArmSession('space');
+    await runArmSession('football');
+    const last = await runArmSession('dinosaurs');
+    expect(last.profile.designPrefs.clutter).toBe('B');
+    expect(last.decisionNote).toBeTruthy();
+    expect(last.profile.activeExperiment?.testId).toBe('format');
+  });
 });

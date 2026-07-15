@@ -1,12 +1,24 @@
 import type {
-  Child,
-  TopicMastery,
-  Worksheet,
+  ActiveExperiment,
   Assessment,
   AssessmentResult,
+  BaselineAnswers,
+  Child,
+  CompletedExperiment,
+  CompletionLevel,
+  DesignArm,
+  DesignPrefs,
   MasteryStatus,
+  ParentEffort,
+  SessionReport,
+  TopicMastery,
+  TutorProfile,
+  TutorProfileStatus,
+  Worksheet,
   WorksheetStatus,
+  AbTestId,
 } from '../../../shared/types.js';
+import { emptyDesignPrefs } from '../../../shared/abTests.js';
 import { deriveChildAgeFields } from '../../../shared/ukSchoolYear.js';
 import { getDb, type AppDatabase } from './database.js';
 
@@ -274,4 +286,199 @@ export function setSetting(key: string, value: string, db: AppDatabase = getDb()
     `INSERT INTO settings (key, value) VALUES (?, ?)
      ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
   ).run(key, value);
+}
+
+type TutorProfileRow = {
+  child_id: string;
+  status: TutorProfileStatus;
+  baseline_summary: string | null;
+  insights_summary: string | null;
+  design_prefs_json: string;
+  active_experiment_json: string | null;
+  completed_experiments_json: string;
+  baseline_answers_json: string | null;
+  updated_at: string;
+};
+
+type SessionReportRow = {
+  id: string;
+  child_id: string;
+  worksheet_id: string;
+  assessment_id: string | null;
+  test_id: string | null;
+  arm: string | null;
+  completed_core: CompletionLevel;
+  time_minutes: number;
+  help_count: number;
+  enjoyment: number;
+  parent_effort: ParentEffort;
+  error_notes: string | null;
+  learning_score: number;
+  composite_score: number;
+  created_at: string;
+};
+
+function mapTutorProfile(row: TutorProfileRow): TutorProfile {
+  const prefs = {
+    ...emptyDesignPrefs(),
+    ...(JSON.parse(row.design_prefs_json || '{}') as DesignPrefs),
+  };
+  return {
+    childId: row.child_id,
+    status: row.status,
+    baselineSummary: row.baseline_summary,
+    insightsSummary: row.insights_summary,
+    designPrefs: prefs,
+    activeExperiment: row.active_experiment_json
+      ? (JSON.parse(row.active_experiment_json) as ActiveExperiment)
+      : null,
+    completedExperiments: JSON.parse(
+      row.completed_experiments_json || '[]',
+    ) as CompletedExperiment[],
+    baselineAnswers: row.baseline_answers_json
+      ? (JSON.parse(row.baseline_answers_json) as BaselineAnswers)
+      : null,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapSessionReport(row: SessionReportRow): SessionReport {
+  return {
+    id: row.id,
+    childId: row.child_id,
+    worksheetId: row.worksheet_id,
+    assessmentId: row.assessment_id,
+    testId: (row.test_id as AbTestId | null) ?? null,
+    arm: (row.arm as DesignArm | null) ?? null,
+    completedCore: row.completed_core,
+    timeMinutes: row.time_minutes,
+    helpCount: row.help_count,
+    enjoyment: row.enjoyment,
+    parentEffort: row.parent_effort,
+    errorNotes: row.error_notes,
+    learningScore: row.learning_score,
+    compositeScore: row.composite_score,
+    createdAt: row.created_at,
+  };
+}
+
+export function getTutorProfile(
+  childId: string,
+  db: AppDatabase = getDb(),
+): TutorProfile | null {
+  const row = db
+    .prepare('SELECT * FROM tutor_profiles WHERE child_id = ?')
+    .get(childId) as TutorProfileRow | undefined;
+  return row ? mapTutorProfile(row) : null;
+}
+
+export function upsertTutorProfile(
+  profile: TutorProfile,
+  db: AppDatabase = getDb(),
+): TutorProfile {
+  db.prepare(
+    `INSERT INTO tutor_profiles (
+       child_id, status, baseline_summary, insights_summary, design_prefs_json,
+       active_experiment_json, completed_experiments_json, baseline_answers_json, updated_at
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(child_id) DO UPDATE SET
+       status = excluded.status,
+       baseline_summary = excluded.baseline_summary,
+       insights_summary = excluded.insights_summary,
+       design_prefs_json = excluded.design_prefs_json,
+       active_experiment_json = excluded.active_experiment_json,
+       completed_experiments_json = excluded.completed_experiments_json,
+       baseline_answers_json = excluded.baseline_answers_json,
+       updated_at = excluded.updated_at`,
+  ).run(
+    profile.childId,
+    profile.status,
+    profile.baselineSummary,
+    profile.insightsSummary,
+    JSON.stringify(profile.designPrefs),
+    profile.activeExperiment ? JSON.stringify(profile.activeExperiment) : null,
+    JSON.stringify(profile.completedExperiments),
+    profile.baselineAnswers ? JSON.stringify(profile.baselineAnswers) : null,
+    profile.updatedAt,
+  );
+  return profile;
+}
+
+export function insertSessionReport(
+  report: SessionReport,
+  db: AppDatabase = getDb(),
+): SessionReport {
+  db.prepare(
+    `INSERT INTO session_reports (
+       id, child_id, worksheet_id, assessment_id, test_id, arm,
+       completed_core, time_minutes, help_count, enjoyment, parent_effort,
+       error_notes, learning_score, composite_score, created_at
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run(
+    report.id,
+    report.childId,
+    report.worksheetId,
+    report.assessmentId,
+    report.testId,
+    report.arm,
+    report.completedCore,
+    report.timeMinutes,
+    report.helpCount,
+    report.enjoyment,
+    report.parentEffort,
+    report.errorNotes,
+    report.learningScore,
+    report.compositeScore,
+    report.createdAt,
+  );
+  return report;
+}
+
+export function listSessionReports(
+  childId: string,
+  db: AppDatabase = getDb(),
+): SessionReport[] {
+  const rows = db
+    .prepare(
+      'SELECT * FROM session_reports WHERE child_id = ? ORDER BY created_at DESC',
+    )
+    .all(childId) as SessionReportRow[];
+  return rows.map(mapSessionReport);
+}
+
+export function listSessionReportsForExperiment(
+  childId: string,
+  testId: AbTestId,
+  db: AppDatabase = getDb(),
+): SessionReport[] {
+  const rows = db
+    .prepare(
+      `SELECT * FROM session_reports
+       WHERE child_id = ? AND test_id = ?
+       ORDER BY created_at ASC`,
+    )
+    .all(childId, testId) as SessionReportRow[];
+  return rows.map(mapSessionReport);
+}
+
+export function getSessionReportForWorksheet(
+  worksheetId: string,
+  db: AppDatabase = getDb(),
+): SessionReport | null {
+  const row = db
+    .prepare('SELECT * FROM session_reports WHERE worksheet_id = ?')
+    .get(worksheetId) as SessionReportRow | undefined;
+  return row ? mapSessionReport(row) : null;
+}
+
+export function getAssessmentForWorksheet(
+  worksheetId: string,
+  db: AppDatabase = getDb(),
+): Assessment | null {
+  const row = db
+    .prepare(
+      'SELECT * FROM assessments WHERE worksheet_id = ? ORDER BY created_at DESC LIMIT 1',
+    )
+    .get(worksheetId) as AssessmentRow | undefined;
+  return row ? mapAssessment(row) : null;
 }

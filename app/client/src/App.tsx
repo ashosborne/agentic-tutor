@@ -5,6 +5,11 @@ import { GeneratePage } from './pages/GeneratePage';
 import { UploadPage } from './pages/UploadPage';
 import { ProgressPage } from './pages/ProgressPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { TutorHomePage } from './pages/tutor/TutorHomePage';
+import { BaselinePage } from './pages/tutor/BaselinePage';
+import { LessonPage } from './pages/tutor/LessonPage';
+import { ReviewPage } from './pages/tutor/ReviewPage';
+import { InsightsPage } from './pages/tutor/InsightsPage';
 
 export function App() {
   return (
@@ -25,6 +30,14 @@ export function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/children/:id" element={<ChildPage />} />
+          <Route path="/children/:id/tutor" element={<TutorHomePage />} />
+          <Route path="/children/:id/tutor/baseline" element={<BaselinePage />} />
+          <Route path="/children/:id/tutor/lesson" element={<LessonPage />} />
+          <Route
+            path="/children/:id/tutor/review/:worksheetId"
+            element={<ReviewPage />}
+          />
+          <Route path="/children/:id/tutor/insights" element={<InsightsPage />} />
           <Route path="/children/:id/generate" element={<GeneratePage />} />
           <Route path="/children/:id/upload/:worksheetId" element={<UploadPage />} />
           <Route path="/children/:id/progress" element={<ProgressPage />} />
