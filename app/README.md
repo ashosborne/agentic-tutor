@@ -17,6 +17,14 @@ npm run dev
 
 Demo mode is **on** by default (`DEMO_MODE=true`) — no API keys required.
 
+## Guided tutor
+
+From a child’s page, **Continue with the tutor** runs the parent-guided loop:
+
+- Baseline questionnaire (new children) → lesson proposal → worksheet → scan → “how it went” report → insights
+- Design styles from the research brief are tried one at a time and adopted into a per-child tutor profile
+- Demo mode supports the full loop with fixtures (no API keys)
+
 ## Live agents
 
 Set in `app/.env`:
@@ -30,8 +38,9 @@ Or toggle Demo mode off in **Settings** (OpenAI key still required).
 
 | Agent | Model |
 |---|---|
-| Worksheet generator | OpenAI `gpt-image-1` (prompt from `docs/examplePrompt.md` + design brief) |
+| Worksheet generator | OpenAI `gpt-image-1` (prompt from `docs/examplePrompt.md` + design brief + design variant) |
 | Scan assessor | GPT-4o (vision) |
+| Tutor loop | Rules engine (baseline, A/B assignment, scoring) + generators above |
 
 ## Scripts
 

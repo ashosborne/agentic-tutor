@@ -1558,3 +1558,125 @@ textarea {
     grid-template-columns: 1fr;
   }
 }
+
+/* Guided tutor */
+
+.tutor-cta {
+  border-color: color-mix(in srgb, var(--sea) 35%, var(--line));
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--wash) 55%, white),
+      color-mix(in srgb, var(--foam) 92%, white)
+    );
+}
+
+.insight-card {
+  border-left: 3px solid var(--sea);
+}
+
+.stepper {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+
+.stepper li {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+.stepper li.active {
+  color: var(--sea-deep);
+  font-weight: 600;
+}
+
+.stepper li.done {
+  color: var(--rag-green);
+}
+
+.stepper-index {
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  font-size: 0.8rem;
+  background: var(--foam);
+}
+
+.stepper li.active .stepper-index {
+  background: var(--sea);
+  border-color: var(--sea);
+  color: white;
+}
+
+.stepper li.done .stepper-index {
+  background: color-mix(in srgb, var(--rag-green) 18%, white);
+  border-color: color-mix(in srgb, var(--rag-green) 45%, transparent);
+}
+
+.face-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.face-btn {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: var(--foam);
+  border-radius: 999px;
+  width: 3rem;
+  height: 3rem;
+  font-size: 1.4rem;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.face-btn:hover {
+  transform: translateY(-1px);
+}
+
+.face-btn.active {
+  border-color: var(--sea);
+  background: color-mix(in srgb, var(--wash) 70%, white);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--sea) 25%, transparent);
+}
+
+.check-row {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  color: var(--ink-soft);
+}
+
+.check-row input {
+  margin-top: 0.25rem;
+}
+
+.plain-list {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--ink-soft);
+  display: grid;
+  gap: 0.35rem;
+}
+
+.field textarea {
+  width: 100%;
+  margin-top: 0.35rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--foam);
+  resize: vertical;
+  font: inherit;
+}

@@ -16,8 +16,9 @@ test.describe('Agentic Tutor happy path', () => {
     await expect(page.getByLabel(/Learning progress/i)).toBeVisible();
     await expect(page.getByText(/Needs learning/i).first()).toBeVisible();
     await expect(page.getByText(/Next focus:/i)).toBeVisible();
+    await expect(page.getByRole('link', { name: /Continue with the tutor/i })).toBeVisible();
 
-    await page.getByRole('link', { name: /Create worksheet/i }).click();
+    await page.getByRole('link', { name: /Create worksheet \(advanced\)/i }).click();
     await expect(page.getByRole('heading', { name: /Pick a theme/i })).toBeVisible();
 
     await page.getByPlaceholder(/sea life/i).fill('sea life');
@@ -37,6 +38,7 @@ test.describe('Agentic Tutor happy path', () => {
       timeout: 30_000,
     });
     await expect(page.getByText(/Maya/i).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: /Tell us how it felt/i })).toBeVisible();
 
     await page.getByRole('link', { name: /View progress/i }).click();
     await expect(page.getByRole('heading', { name: /The curriculum, curated/i })).toBeVisible();
@@ -45,6 +47,39 @@ test.describe('Agentic Tutor happy path', () => {
     await expect(
       page.locator('.subject-card').filter({ hasText: 'Mathematics' }),
     ).toBeVisible();
+  });
+
+  test('guided tutor lesson → upload → how-it-went → insights', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: /Maya/i }).click();
+    await page.getByRole('link', { name: /Continue with the tutor/i }).click();
+    await expect(page.getByText(/Today’s lesson for Maya/i)).toBeVisible();
+    await expect(page.getByText(/gentle experiment|Clear goals/i).first()).toBeVisible();
+
+    await page.getByPlaceholder(/unicorns|sea life|space/i).fill('sea life');
+    await page.getByRole('button', { name: /Create today’s worksheet/i }).click();
+    await expect(page.getByText(/Ready to print/i)).toBeVisible({ timeout: 30_000 });
+
+    await page.getByRole('button', { name: /Upload scan when done/i }).click();
+    const fixtureScan = path.resolve(__dirname, '../../fixtures/scans/demo-scan-sea-life.svg');
+    await page.setInputFiles('input[type="file"]', fixtureScan);
+    await expect(page.getByRole('heading', { name: /How it went/i })).toBeVisible({
+      timeout: 30_000,
+    });
+
+    await page.getByRole('button', { name: /Tell us how it felt/i }).click();
+    await expect(page.getByText(/Did they finish the main part/i)).toBeVisible();
+    await page.getByRole('button', { name: /^Yes$/i }).click();
+    await page.getByRole('button', { name: /^😄$/i }).click();
+    await page.getByRole('button', { name: /^Easy$/i }).click();
+    await page.getByRole('button', { name: /Save how it went/i }).click();
+
+    await expect(page.getByText(/What we’re learning about Maya|Here’s what we’ll try next/i)).toBeVisible({
+      timeout: 15_000,
+    });
+    await page.getByRole('link', { name: /See insights/i }).click();
+    await expect(page.getByRole('heading', { name: /What seems to help Maya/i })).toBeVisible();
+    await expect(page.getByText(/Clear goals|Still learning|What we’re trying/i).first()).toBeVisible();
   });
 
   test('atlas and scorecards open full-width subject workspace', async ({ page }) => {
