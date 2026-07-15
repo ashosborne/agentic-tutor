@@ -87,4 +87,24 @@ describe('worksheetPrompt', () => {
   it('derives a readable title', () => {
     expect(deriveWorksheetTitle('dinosaurs', [topic])).toBe('dinosaurs — Adding');
   });
+
+  it('appends DESIGN VARIANT and child design defaults', () => {
+    const prompt = buildWorksheetPrompt({
+      child,
+      theme: 'dinosaurs',
+      topics: [topic],
+      durationMinutes: 15,
+      designVariant: { testId: 'clutter', arm: 'B', label: 'Calm & relevant' },
+      designPrefs: {
+        clutter: null,
+        goal_framing: 'B',
+        feedback_timing: null,
+        choice: null,
+        format: null,
+      },
+    });
+    expect(prompt).toContain('DESIGN VARIANT (mandatory — clutter test, arm B)');
+    expect(prompt).toContain('CHILD DESIGN DEFAULTS');
+    expect(prompt).toContain('Clear goals at the top');
+  });
 });

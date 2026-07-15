@@ -224,13 +224,16 @@ export function proposeLesson(input: {
   themeOverride?: string | null;
   durationOverride?: number | null;
   preferTopicId?: string | null;
+  /** When true, consume/advance the experiment arm. Preview passes false. */
+  commitArm?: boolean;
 }): {
   proposal: LessonProposal;
   experimentAfterAssign: ReturnType<typeof startExperiment> | null;
   assignedArm: DesignArm | null;
 } {
   const { child, frontier, topicsById, prefs } = input;
-  let experiment = input.activeExperiment;
+  const experiment = input.activeExperiment;
+  const commitArm = input.commitArm ?? false;
 
   let topic: Topic | null = null;
   if (input.preferTopicId) {
@@ -258,9 +261,14 @@ export function proposeLesson(input: {
   let experimentAfterAssign = experiment;
 
   if (experiment) {
-    const assigned = assignArm(experiment);
-    assignedArm = assigned.arm;
-    experimentAfterAssign = assigned.experiment;
+    if (commitArm) {
+      const assigned = assignArm(experiment);
+      assignedArm = assigned.arm;
+      experimentAfterAssign = assigned.experiment;
+    } else {
+      assignedArm = experiment.nextArm;
+      experimentAfterAssign = experiment;
+    }
     designVariant = armMeta(experiment.testId, assignedArm);
     const card = experimentCardCopy(experiment);
     experimentNote = card.body;
@@ -282,7 +290,7 @@ export function proposeLesson(input: {
       }. We’ll practise it in a short, themed worksheet.`
     : `We’ll practise “${topic.name}” with ${child.name} in a short, themed worksheet.`;
 
-  // Touch prefs so lint doesn’t complain when only used for future prompt defaults
+  // Prefs are applied at prompt-build time; kept on the input for call-site clarity.
   void prefs;
 
   return {

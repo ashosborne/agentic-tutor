@@ -1,10 +1,17 @@
-import type { Child, Topic } from '../../../shared/types.js';
+import type {
+  Child,
+  DesignPrefs,
+  DesignVariantMeta,
+  Topic,
+} from '../../../shared/types.js';
 
 export interface GenerateWorksheetInput {
   child: Child;
   theme: string;
   durationMinutes: number;
   topics: Topic[];
+  designVariant?: DesignVariantMeta | null;
+  designPrefs?: DesignPrefs | null;
 }
 
 export interface GeneratedWorksheet {

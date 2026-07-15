@@ -1,7 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { nanoid } from 'nanoid';
-import type { GeneratedWorksheetMeta, Worksheet } from '../../../shared/types.js';
+import type {
+  DesignPrefs,
+  DesignVariantMeta,
+  GeneratedWorksheetMeta,
+  Worksheet,
+} from '../../../shared/types.js';
 import { resolveTopicCount, selectTopicsForWorksheet } from '../../../shared/topicSelection.js';
 import { getWorksheetGenerator } from '../agents/index.js';
 import {
@@ -20,6 +25,8 @@ export interface CreateWorksheetRequest {
   subjectFocus?: string | null;
   domainFocus?: string | null;
   preferTopicId?: string | null;
+  designVariant?: DesignVariantMeta | null;
+  designPrefs?: DesignPrefs | null;
 }
 
 export async function createWorksheet(
@@ -56,6 +63,8 @@ export async function createWorksheet(
     theme: req.theme,
     durationMinutes: req.durationMinutes,
     topics,
+    designVariant: req.designVariant,
+    designPrefs: req.designPrefs,
   });
 
   const id = nanoid();
@@ -67,6 +76,7 @@ export async function createWorksheet(
   const meta: GeneratedWorksheetMeta = {
     title: generated.title,
     theme: generated.theme,
+    designVariant: req.designVariant ?? null,
   };
 
   const worksheet: Worksheet = {

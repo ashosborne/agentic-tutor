@@ -1,11 +1,20 @@
 import { nanoid } from 'nanoid';
-import type { Child, GeneratedWorksheetMeta, TopicMastery, Worksheet } from '../../../shared/types.js';
+import type {
+  Child,
+  GeneratedWorksheetMeta,
+  TopicMastery,
+  TutorProfile,
+  Worksheet,
+} from '../../../shared/types.js';
+import { emptyDesignPrefs, startExperiment } from '../../../shared/abTests.js';
+import { buildInsightsSummary } from '../../../shared/tutorLogic.js';
 import { ensureStorageDirs, getDb, closeDb, STORAGE_DIR } from './database.js';
 import {
   insertWorksheet,
   setSetting,
   upsertChild,
   upsertMastery,
+  upsertTutorProfile,
 } from './repository.js';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -137,6 +146,8 @@ export async function seedDatabase(options?: { reset?: boolean }): Promise<void>
 
   if (options?.reset) {
     db.exec(`
+      DELETE FROM session_reports;
+      DELETE FROM tutor_profiles;
       DELETE FROM assessments;
       DELETE FROM worksheets;
       DELETE FROM topic_mastery;
@@ -168,9 +179,67 @@ export async function seedDatabase(options?: { reset?: boolean }): Promise<void>
   seedWorksheet(CHILD_MAYA, 'unicorns', ['mt_zuKAX6lcYR', 'mt_QEr24lqzvH'], 'worksheet-unicorns.png');
   seedWorksheet(CHILD_LEO, 'ponies', ['mt_r0VXbfAmsH', 'mt_YXVQaufkKO', 'mt_HhuSDxwDNM'], 'worksheet-ponies.png');
 
+  const mayaPrefs = emptyDesignPrefs();
+  const mayaProfile: TutorProfile = {
+    childId: CHILD_MAYA.id,
+    status: 'active',
+    baselineSummary:
+      'Maya seems confident with early counting, and will benefit from gentle practice with addition and sentence punctuation. Plan to read instructions aloud together. Aim for about 7 minutes at a time.',
+    insightsSummary: buildInsightsSummary(CHILD_MAYA.name, mayaPrefs, 0),
+    designPrefs: mayaPrefs,
+    activeExperiment: startExperiment('goal_framing', '2026-06-01T10:00:00.000Z'),
+    completedExperiments: [],
+    baselineAnswers: {
+      enjoySubjects: ['Mathematics', 'Science'],
+      trickySubjects: ['English'],
+      readingSupport: 'read_aloud',
+      focusMinutes: 7,
+      mathsConfidence: 'ok',
+      englishConfidence: 'tricky',
+      otherNotes: 'Loves unicorns and sea life themes.',
+      wantDiagnosticWorksheet: false,
+    },
+    updatedAt: '2026-06-01T10:00:00.000Z',
+  };
+  upsertTutorProfile(mayaProfile);
+
+  const leoPrefs = emptyDesignPrefs();
+  leoPrefs.goal_framing = 'B';
+  const leoProfile: TutorProfile = {
+    childId: CHILD_LEO.id,
+    status: 'active',
+    baselineSummary:
+      'Leo is growing well in maths place value and is ready for calm, clear worksheets. A little help with reading instructions is still useful. Aim for about 12 minutes at a time.',
+    insightsSummary: buildInsightsSummary(CHILD_LEO.name, leoPrefs, 1),
+    designPrefs: leoPrefs,
+    activeExperiment: startExperiment('clutter', '2026-06-20T10:00:00.000Z'),
+    completedExperiments: [
+      {
+        testId: 'goal_framing',
+        winner: 'B',
+        reason: '“Title plus learning goal and “I can…” lines” looked more helpful.',
+        completedAt: '2026-06-18T10:00:00.000Z',
+        meanScoreA: 0.62,
+        meanScoreB: 0.78,
+      },
+    ],
+    baselineAnswers: {
+      enjoySubjects: ['Mathematics', 'Physical Education'],
+      trickySubjects: ['English'],
+      readingSupport: 'some_help',
+      focusMinutes: 12,
+      mathsConfidence: 'strong',
+      englishConfidence: 'ok',
+      otherNotes: 'Loves ponies and space.',
+      wantDiagnosticWorksheet: false,
+    },
+    updatedAt: '2026-06-20T10:00:00.000Z',
+  };
+  upsertTutorProfile(leoProfile);
+
   createSampleScan();
 
-  console.log('Seeded children: Maya (5) and Leo (7), sample worksheets, and demo scan.');
+  console.log('Seeded children: Maya (5) and Leo (7), tutor profiles, sample worksheets, and demo scan.');
 }
 
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);

@@ -98,7 +98,7 @@ describe('buildBaselineSummary', () => {
 describe('proposeLesson', () => {
   it('uses frontier topic, interests theme, and assigns experiment arm', () => {
     const topicsById = new Map(topics.map((t) => [t.id, t]));
-    const { proposal, assignedArm, experimentAfterAssign } = proposeLesson({
+    const preview = proposeLesson({
       child,
       frontier: {
         subject: 'Mathematics',
@@ -109,16 +109,32 @@ describe('proposeLesson', () => {
       topicsById,
       prefs: emptyDesignPrefs(),
       activeExperiment: startExperiment('goal_framing'),
+      commitArm: false,
     });
 
-    expect(proposal.topicId).toBe('m2');
-    expect(proposal.theme).toBe('unicorns');
-    expect(proposal.durationMinutes).toBe(7);
-    expect(proposal.why).toContain('Adding');
-    expect(assignedArm).toBe('A');
-    expect(proposal.designVariant?.testId).toBe('goal_framing');
-    expect(proposal.designVariant?.arm).toBe('A');
-    expect(experimentAfterAssign?.nextArm).toBe('B');
+    expect(preview.proposal.topicId).toBe('m2');
+    expect(preview.proposal.theme).toBe('unicorns');
+    expect(preview.proposal.durationMinutes).toBe(7);
+    expect(preview.proposal.why).toContain('Adding');
+    expect(preview.assignedArm).toBe('A');
+    expect(preview.proposal.designVariant?.arm).toBe('A');
+    expect(preview.experimentAfterAssign?.nextArm).toBe('A');
+
+    const committed = proposeLesson({
+      child,
+      frontier: {
+        subject: 'Mathematics',
+        domain: 'Number',
+        topicId: 'm2',
+        topicName: 'Adding',
+      },
+      topicsById,
+      prefs: emptyDesignPrefs(),
+      activeExperiment: startExperiment('goal_framing'),
+      commitArm: true,
+    });
+    expect(committed.assignedArm).toBe('A');
+    expect(committed.experimentAfterAssign?.nextArm).toBe('B');
   });
 });
 

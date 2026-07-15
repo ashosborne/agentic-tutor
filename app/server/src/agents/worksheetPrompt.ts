@@ -1,6 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { Child, Topic } from '../../../shared/types.js';
+import { buildDesignPromptSections } from '../../../shared/abTests.js';
+import type {
+  Child,
+  DesignPrefs,
+  DesignVariantMeta,
+  Topic,
+} from '../../../shared/types.js';
 import { APP_ROOT } from '../config.js';
 
 const DOCS_DIR = path.resolve(APP_ROOT, '../docs');
@@ -57,6 +63,8 @@ export function buildWorksheetPrompt(input: {
   theme: string;
   topics: Topic[];
   durationMinutes: number;
+  designVariant?: DesignVariantMeta | null;
+  designPrefs?: DesignPrefs | null;
 }): string {
   const template = loadDoc('examplePrompt.md');
   const designReport = loadDoc('deep-research-report.md');
@@ -95,6 +103,16 @@ export function buildWorksheetPrompt(input: {
       new RegExp(`Theme every activity tightly around "${EXAMPLE_THEME}"\\.`, 'i'),
       `Theme every activity tightly around "${input.theme}".`,
     );
+
+  const designSections = buildDesignPromptSections({
+    active: input.designVariant
+      ? { testId: input.designVariant.testId, arm: input.designVariant.arm }
+      : null,
+    prefs: input.designPrefs ?? undefined,
+  });
+  if (designSections) {
+    prompt = `${prompt.trim()}\n\n${designSections}\n`;
+  }
 
   return prompt;
 }
