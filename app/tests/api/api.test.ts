@@ -306,6 +306,7 @@ describe('API routes', () => {
     const baselineJson = await baseline.json();
     expect(baselineJson.profile.status).toBe('active');
     expect(baselineJson.profile.baselineSummary).toContain('Riley');
+    expect(baselineJson.diagnosticWorksheet).toBeNull();
 
     const mastery = await api.request(`/children/${riley.id}/mastery`);
     const masteryJson = await mastery.json();
@@ -357,6 +358,46 @@ describe('API routes', () => {
     const insightsJson = await insights.json();
     expect(insightsJson.summary).toContain('Riley');
     expect(insightsJson.inProgress?.testId).toBe('goal_framing');
+  });
+
+  it('generates an optional check-in worksheet from baseline', async () => {
+    const createChild = await api.request('/children', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Jordan',
+        dateOfBirth: '2021-01-01',
+        interests: ['unicorns'],
+      }),
+    });
+    const jordan = await createChild.json();
+
+    const baseline = await api.request(`/children/${jordan.id}/tutor/baseline`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        enjoySubjects: ['Mathematics'],
+        trickySubjects: [],
+        readingSupport: 'read_aloud',
+        focusMinutes: 8,
+        mathsConfidence: 'ok',
+        englishConfidence: 'ok',
+        wantDiagnosticWorksheet: true,
+      }),
+    });
+    expect(baseline.status).toBe(201);
+    const json = await baseline.json();
+    expect(json.diagnosticSuggested).toBe(true);
+    expect(json.diagnosticWorksheet?.status).toBe('ready');
+    expect(json.diagnosticWorksheet?.theme).toBe('unicorns');
+    const meta = JSON.parse(json.diagnosticWorksheet.contentJson as string);
+    // Check-in sheets must not consume an A/B experiment arm.
+    expect(meta.designVariant ?? null).toBeNull();
+
+    const dash = await api.request(`/children/${jordan.id}/tutor`);
+    const dashJson = await dash.json();
+    expect(dashJson.profile.activeExperiment?.armACount).toBe(0);
+    expect(dashJson.profile.activeExperiment?.nextArm).toBe('A');
   });
 
   it('adopts a design preference after enough paired session reports', async () => {

@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import type { BaselineAnswers, Child, SubjectConfidence } from '@shared/types';
+import type {
+  BaselineAnswers,
+  Child,
+  SubjectConfidence,
+  Worksheet,
+} from '@shared/types';
 import { suggestedDurationMinutes } from '@shared/abTests';
 import { defaultBaselineAnswers } from '@shared/tutorLogic';
 import { api } from '../../lib/api';
@@ -28,6 +33,9 @@ export function BaselinePage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [doneSummary, setDoneSummary] = useState<string | null>(null);
+  const [diagnosticWorksheet, setDiagnosticWorksheet] = useState<Worksheet | null>(
+    null,
+  );
 
   useEffect(() => {
     if (!id) return;
@@ -62,6 +70,32 @@ export function BaselinePage() {
           <p className="story" style={{ maxWidth: '42ch' }}>
             {doneSummary}
           </p>
+          {diagnosticWorksheet && (
+            <div className="stack">
+              <p className="section-title">Your short check-in worksheet</p>
+              <p className="meta">
+                {diagnosticWorksheet.title} · about {diagnosticWorksheet.durationMinutes}{' '}
+                minutes. Print it when you’re ready — uploading the scan later will refine
+                what we know about {child.name}.
+              </p>
+              <div className="row">
+                <a
+                  className="btn secondary"
+                  href={`/api/worksheets/${diagnosticWorksheet.id}/file`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  View / print check-in
+                </a>
+                <Link
+                  className="btn ghost"
+                  to={`/children/${child.id}/upload/${diagnosticWorksheet.id}`}
+                >
+                  Upload scan when done
+                </Link>
+              </div>
+            </div>
+          )}
           <div className="row">
             <button
               type="button"
@@ -86,6 +120,7 @@ export function BaselinePage() {
     try {
       const result = await api.submitBaseline(id, answers);
       setDoneSummary(result.profile.baselineSummary);
+      setDiagnosticWorksheet(result.diagnosticWorksheet);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save');
     } finally {

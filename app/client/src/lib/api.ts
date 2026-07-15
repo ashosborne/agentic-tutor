@@ -129,14 +129,15 @@ export const api = {
   getTutorDashboard: (id: string) =>
     request<TutorDashboard>(`/api/children/${id}/tutor`),
   submitBaseline: (id: string, answers: BaselineAnswers) =>
-    request<{ profile: TutorProfile; diagnosticSuggested: boolean }>(
-      `/api/children/${id}/tutor/baseline`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(answers),
-      },
-    ),
+    request<{
+      profile: TutorProfile;
+      diagnosticSuggested: boolean;
+      diagnosticWorksheet: Worksheet | null;
+    }>(`/api/children/${id}/tutor/baseline`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(answers),
+    }),
   proposeLesson: (
     id: string,
     data?: {

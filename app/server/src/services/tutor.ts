@@ -9,6 +9,7 @@ import {
   pickNextExperiment,
   recordArmUse,
   startExperiment,
+  suggestedDurationMinutes,
 } from '../../../shared/abTests.js';
 import {
   buildBaselineSummary,
@@ -106,10 +107,14 @@ export function getTutorDashboard(childId: string): TutorDashboard {
   };
 }
 
-export function submitBaseline(
+export async function submitBaseline(
   childId: string,
   answers: BaselineAnswers,
-): { profile: TutorProfile; diagnosticSuggested: boolean } {
+): Promise<{
+  profile: TutorProfile;
+  diagnosticSuggested: boolean;
+  diagnosticWorksheet: Worksheet | null;
+}> {
   const child = getChild(childId);
   if (!child) throw new Error('Child not found');
 
@@ -140,9 +145,25 @@ export function submitBaseline(
   };
   upsertTutorProfile(profile);
 
+  let diagnosticWorksheet: Worksheet | null = null;
+  if (answers.wantDiagnosticWorksheet) {
+    // Check-in sheet for capability sampling — does not consume an A/B arm.
+    const path = buildLearningPathForChild(child);
+    const theme = child.interests[0] || 'everyday adventures';
+    diagnosticWorksheet = await createWorksheet({
+      childId,
+      theme,
+      durationMinutes: answers.focusMinutes || suggestedDurationMinutes(child.age),
+      subjectFocus: path.frontier?.subject ?? null,
+      domainFocus: path.frontier?.domain ?? null,
+      preferTopicId: path.frontier?.topicId ?? null,
+    });
+  }
+
   return {
     profile,
     diagnosticSuggested: Boolean(answers.wantDiagnosticWorksheet),
+    diagnosticWorksheet,
   };
 }
 

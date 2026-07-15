@@ -338,7 +338,7 @@ api.post('/children/:id/tutor/baseline', async (c) => {
     if (!body?.mathsConfidence || !body?.englishConfidence || !body?.readingSupport) {
       return c.json({ error: 'Baseline answers are incomplete' }, 400);
     }
-    const result = submitBaseline(child.id, {
+    const result = await submitBaseline(child.id, {
       enjoySubjects: body.enjoySubjects ?? [],
       trickySubjects: body.trickySubjects ?? [],
       readingSupport: body.readingSupport,
