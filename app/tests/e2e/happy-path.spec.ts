@@ -70,13 +70,14 @@ test.describe('Agentic Tutor happy path', () => {
     await page.getByRole('button', { name: /Tell us how it felt/i }).click();
     await expect(page.getByText(/Did they finish the main part/i)).toBeVisible();
     await page.getByRole('button', { name: /^Yes$/i }).click();
-    await page.getByRole('button', { name: /^😄$/i }).click();
+    await page.getByRole('button', { name: /Enjoyment 5 of 5/i }).click();
     await page.getByRole('button', { name: /^Easy$/i }).click();
     await page.getByRole('button', { name: /Save how it went/i }).click();
 
-    await expect(page.getByText(/What we’re learning about Maya|Here’s what we’ll try next/i)).toBeVisible({
-      timeout: 15_000,
-    });
+    await expect(
+      page.getByRole('heading', { name: /Here’s what we’ll try next/i }),
+    ).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/What we’re learning about Maya/i)).toBeVisible();
     await page.getByRole('link', { name: /See insights/i }).click();
     await expect(page.getByRole('heading', { name: /What seems to help Maya/i })).toBeVisible();
     await expect(page.getByText(/Clear goals|Still learning|What we’re trying/i).first()).toBeVisible();
@@ -85,7 +86,7 @@ test.describe('Agentic Tutor happy path', () => {
   test('atlas and scorecards open full-width subject workspace', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: /Leo/i }).click();
-    await page.getByRole('link', { name: /Explore learning path/i }).click();
+    await page.getByRole('link', { name: /Explore learning path/i }).first().click();
 
     await expect(page.getByLabel(/Progress atlas/i)).toBeVisible();
     await expect(page.getByText(/Progress atlas/i).first()).toBeVisible();
@@ -113,7 +114,7 @@ test.describe('Agentic Tutor happy path', () => {
   test('topic drawer prefills concept focus on generate', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: /Leo/i }).click();
-    await page.getByRole('link', { name: /Explore learning path/i }).click();
+    await page.getByRole('link', { name: /Explore learning path/i }).first().click();
 
     await page
       .locator('.subject-card')
